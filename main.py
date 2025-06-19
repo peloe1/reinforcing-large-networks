@@ -86,8 +86,7 @@ def main() -> None:
         traffic_volumes = {t: 100.0 for t in terminal_node_pairs}
 
         paths = feasible_paths(G, terminal_node_pairs)
-        #paths = simple_paths(G, terminal_node_pairs)
-
+        paths = {t: p for t, p in paths.items() if len(p) > 0}
 
         node_reinforcements = [(i, 0.995) for i in range(30)]
         costs = [random.choice([1.0,2.0]) for _ in range(30)]
@@ -98,7 +97,6 @@ def main() -> None:
         end = time.time()
         print(f"Time to compute cost-efficient portfolios: {(end - start):.2f}")
         print(f"Number of cost-efficient portfolios: {len(Q)}")
-        #print(f"Costs of the cost-efficient portfolios: {portfolio_costs}")
 
     RANDOM = True
     if RANDOM:
