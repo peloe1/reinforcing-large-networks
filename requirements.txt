@@ -1,0 +1,4 @@
+matplotlib==3.10.3
+networkx==3.5
+numpy==2.3.0
+polytope==0.2.5
