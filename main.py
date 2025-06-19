@@ -4,7 +4,7 @@ import numpy as np
 import random
 
 from information_set import compute_extreme_points
-from ce_portfolios import costEfficientPortfolios
+from ce_portfolios import costEfficientPortfolios, costEfficientPortfolios_parallel
 from path import simple_paths, terminal_pairs
 from path import feasible_paths
 from construct_graph import construct_graph, generate_random_graph_with_positions
@@ -86,17 +86,36 @@ def main() -> None:
         traffic_volumes = {t: 100.0 for t in terminal_node_pairs}
 
         paths = feasible_paths(G, terminal_node_pairs)
-        paths = {t: p for t, p in paths.items() if len(p) > 0}
 
-        node_reinforcements = [(i, 0.995) for i in range(30)]
-        costs = [random.choice([1.0,2.0]) for _ in range(30)]
-        budget = 12.0
+        r = 27
 
+        node_reinforcements = [(i, 0.995) for i in range(r)]
+        costs = [1.0 for _ in range(r)]
+        budget = r / 2
+        print("-----------------------------------------")
+        print("Non-parallel version")
         start = time.time()
-        Q, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget)
+        Q, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, True)
+        #Q = []
         end = time.time()
-        print(f"Time to compute cost-efficient portfolios: {(end - start):.2f}")
-        print(f"Number of cost-efficient portfolios: {len(Q)}")
+        if end - start > 60:
+            print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
+        else:
+            print(f"Time to compute cost-efficient portfolios: {(end - start):.2f} seconds")
+
+        print(f"Number of resulting cost-efficient portfolios: {len(Q)}")
+
+        print("-----------------------------------------")
+        print("Parallel version")
+        start = time.time()
+        Q, portfolio_costs = costEfficientPortfolios_parallel(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget)
+        end = time.time()
+        if end - start > 60:
+            print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
+        else:
+            print(f"Time to compute cost-efficient portfolios: {(end - start):.2f} seconds")
+
+        print(f"Number of resulting cost-efficient portfolios: {len(Q)}")
 
     RANDOM = True
     if RANDOM:

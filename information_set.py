@@ -1,4 +1,10 @@
-import polytope as pc
+import contextlib
+import os
+import sys
+
+with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
+    import polytope as pc  # or wherever the message gets triggered
+#import polytope as pc
 import numpy as np
 
 
@@ -38,7 +44,6 @@ def compute_extreme_points(vector):
     A = np.asarray(A_matrix)
 
     b = np.asarray(b_vector)
-
     p = pc.Polytope(A, b)
     pp = pc.extreme(p)
     if pp is not None:
