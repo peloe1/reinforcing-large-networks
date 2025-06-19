@@ -1,15 +1,9 @@
-from matplotlib.pylab import f
 import numpy as np
 import time
 import itertools
 from queue import Queue
 import random
-
-
-# TODO: Avoid generating all portfolios which are then filtered, but instead generate only the ones which are feasible.
-# When number of projects is 30, the program just crashes, 25 is still fine. I believe this is due to the memory limitations. 
-# Avoiding the generation of redundant portfolios, which are never considered would solve this issue.
-
+import matplotlib.pyplot as plt
 
 def generateAllPortfolios(numberOfProjects: int) -> list[list[int]]:
     """
@@ -59,7 +53,7 @@ def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> t
 
     return feasible, portfolioCosts
 
-def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict]:
+def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -67,7 +61,7 @@ def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: flo
             budget (float): The budget available.
             
         Returns:
-            list[tuple[int, ..., int]]: The set of feasible portfolios.
+            tuple[list[int], dict[tuple[int, ...], float]]: The set of feasible portfolios.
     """
 
     feasible = []
@@ -112,10 +106,6 @@ def dominates(e1: list[float], e2: list[float]) -> bool:
 
     
     return all(e1[i] >= e2[i] for i in range(len(e1))) and any(e1[i] > e2[i] for i in range(len(e1)))
-
-# This does not work if given lists without converting them to NumPy arrays
-def dominates_numpy(e1: np.ndarray, e2: np.ndarray) -> bool:
-    return bool(np.all(e1 >= e2) and np.any(e1 > e2))
 
 def equal(e1: list[float], e2: list[float]) -> bool:
     """
@@ -171,7 +161,6 @@ def costEfficient(e1: list[float], c1: float, feasiblePortfolios: list[tuple[lis
     return not any(dominatesWithCost(e2, e1, c2, c1) for e2, c2 in feasiblePortfolios)# if q1 != q2) # Removing this check made it work? WTF
 
 
-
 if __name__ == "__main__":
     print("This file is not meant to be run directly!")
     if False:
@@ -187,26 +176,37 @@ if __name__ == "__main__":
         #    print(p)
     
     if True:
-        costs = [random.choice([1.0,2.0,3.0]) for _ in range(30)]
-        numberOfActions = len(costs)
-        budget = 12
+        times_old = []
+        times_parallel = []
+        for k in range(20, 31):
+            print(f"Iteration {k-19}: ")
+            average_old = 0
+            average_parallel = 0
+            for _ in range(5):
+                costs = [random.choice([1.0,2.0,3.0]) for _ in range(k)]
+                numberOfActions = len(costs)
+                budget = k / 2.5
 
-        start = time.time()
-        #feasible, feasibleCosts = feasiblePortfolios(numberOfActions, costs, budget)
-        feasible = []
-        end = time.time()
-        print(f"Time to generate all feasible portfolios the old method: {(end - start):.2f}")
+                start = time.time()
+                feasible, feasibleCosts = generateFeasiblePortfolios(numberOfActions, costs, budget)
+                end = time.time()
+                #print(f"Time to generate all feasible portfolios with the old method: {(end - start):.2f}")
 
-
-        start = time.time()
-        feasible_new, feasibleCosts_new = generateFeasiblePortfolios(numberOfActions, costs, budget)
-        end = time.time()
-        print(f"Time to generate all feasible portfolios the new method: {(end - start):.2f}")
+                average_old += end - start
+                
+                #print(f"Number of feasible portfolios the old method: {len(feasible)}")
+                #print(f"Number of feasible portfolios the new method: {len(feasible_new)}")
+            print(f"Average with the old method: {average_old / 5}")
+            print(f"Average with the new method: {average_parallel / 5}")
+            times_old.append(average_old / 5)
+            times_parallel.append(average_parallel / 5)
         
-        print(f"Number of feasible portfolios the old method: {len(feasible)}")
-        print(f"Number of feasible portfolios the new method: {len(feasible_new)}")
-
-
+        plt.plot([k for k in range(20, 36)], times_old, label="Old method")
+        plt.plot([k for k in range(20, 36)], times_parallel, label="New method")
+        plt.xlabel("Number of actions")
+        plt.ylabel("Time (s)")
+        plt.legend()
+        plt.show()
 
     if False:
         costs = [2.0,2,3]
@@ -247,6 +247,3 @@ if __name__ == "__main__":
         c2 = sum(costs[i] * q2[i] for i in range(len(costs)))
         
         #print(dominatesWithCost(e1, e2, c1, c2))
-
-
-        # Everything in this file should work as of 21.05.2024
