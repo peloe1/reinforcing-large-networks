@@ -55,7 +55,7 @@ def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> t
     return feasible, portfolioCosts
 
 # Old inefficient version, which used lists of integers (zeros and ones) to represent portfolios
-def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
+def generateFeasiblePortfolios_old(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -99,7 +99,7 @@ def portfolio_as_bitmask(portfolio: list[int]) -> int:
     return sum((bit << i) for i, bit in enumerate(portfolio))
 
 # A new improved version, which hashes the portfolios (binary vectors) to be just integers to speed up memory accesses and computations
-def generateFeasiblePortfolios_bits(noOfActions: int, costs: list[float], budget: float) -> tuple[set[int], dict[int, float]]:
+def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[set[int], dict[int, float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.

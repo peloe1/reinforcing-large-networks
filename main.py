@@ -5,7 +5,7 @@ import random
 
 from information_set import compute_extreme_points
 from portfolio import portfolio_as_bitmask
-from ce_portfolios import costEfficientPortfolios, costEfficientPortfolios_optimized 
+from ce_portfolios import costEfficientPortfolios_old, costEfficientPortfolios
 from path import simple_paths, terminal_pairs
 from path import feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions
@@ -61,7 +61,7 @@ def main() -> None:
         budget = 10.0
 
         start = time.time()
-        Q, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget)
+        Q, portfolio_costs = costEfficientPortfolios_old(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget)
         end = time.time()
         print(f"Time to compute cost-efficient portfolios: {(end - start):.2f}")
         print(f"Number of cost-efficient portfolios: {len(Q)}")
@@ -97,7 +97,7 @@ def main() -> None:
         print("-----------------------------------------")
         print("Original version with lists of integers")
         start = time.time()
-        Q_1, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
+        Q_1, portfolio_costs = costEfficientPortfolios_old(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
         #Q_1 = []
         end = time.time()
         if end - start > 60:
@@ -110,7 +110,7 @@ def main() -> None:
         print("-----------------------------------------")
         print("New version with binary representation")
         start = time.time()
-        Q_2, portfolio_costs = costEfficientPortfolios_optimized(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
+        Q_2, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
         end = time.time()
         if end - start > 60:
             print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")

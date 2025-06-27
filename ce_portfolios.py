@@ -4,11 +4,11 @@ import time
 import multiprocessing as mp
 from multiprocessing import Manager
 
-from portfolio import dominatesWithCost, generateFeasiblePortfolios, generateFeasiblePortfolios_bits
+from portfolio import dominatesWithCost, generateFeasiblePortfolios_old, generateFeasiblePortfolios
 from performance import expected_traffic_volumes
 
 # Old slow version using lists of integers representing portfolios
-def costEfficientPortfolios(G: nx.Graph, pairs: list[tuple[int, int]], paths: dict[tuple[int, int], list[np.ndarray]], traffic_volumes: dict[tuple[int, int], float], extreme_points: np.ndarray, node_reinforcements: list[tuple[int, float]], costs: list[float], budget: float, verbose=False) -> tuple[list[list[int]], dict[tuple[int, ...], list[float]]]:
+def costEfficientPortfolios_old(G: nx.Graph, pairs: list[tuple[int, int]], paths: dict[tuple[int, int], list[np.ndarray]], traffic_volumes: dict[tuple[int, int], float], extreme_points: np.ndarray, node_reinforcements: list[tuple[int, float]], costs: list[float], budget: float, verbose=False) -> tuple[list[list[int]], dict[tuple[int, ...], list[float]]]:
     """
     Parameters:
         G (networkx.Graph): The graph in its original state with no portfolios applied and no disruptions.
@@ -23,7 +23,7 @@ def costEfficientPortfolios(G: nx.Graph, pairs: list[tuple[int, int]], paths: di
     r = len(node_reinforcements)
 
     start = time.time()
-    Q_F, portfolio_costs = generateFeasiblePortfolios(r, costs, budget)
+    Q_F, portfolio_costs = generateFeasiblePortfolios_old(r, costs, budget)
     end = time.time()
     print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
     
@@ -80,7 +80,7 @@ def costEfficientPortfolios(G: nx.Graph, pairs: list[tuple[int, int]], paths: di
 def bitmask_to_portfolio(mask: int, r: int) -> list[int]:
     return [(mask >> i) & 1 for i in range(r)]
 
-def costEfficientPortfolios_optimized(G: nx.Graph, pairs: list[tuple[int, int]], paths: dict[tuple[int, int], list[np.ndarray]], traffic_volumes: dict[tuple[int, int], float], extreme_points: np.ndarray, node_reinforcements: list[tuple[int, float]], costs: list[float], budget: float, verbose=False) -> tuple[set[int], dict[int, list[float]]]:
+def costEfficientPortfolios(G: nx.Graph, pairs: list[tuple[int, int]], paths: dict[tuple[int, int], list[np.ndarray]], traffic_volumes: dict[tuple[int, int], float], extreme_points: np.ndarray, node_reinforcements: list[tuple[int, float]], costs: list[float], budget: float, verbose=False) -> tuple[set[int], dict[int, list[float]]]:
     """
     Parameters:
         G (networkx.Graph): The graph in its original state with no portfolios applied and no disruptions.
@@ -95,7 +95,7 @@ def costEfficientPortfolios_optimized(G: nx.Graph, pairs: list[tuple[int, int]],
     r = len(node_reinforcements)
 
     start = time.time()
-    Q_F, portfolio_costs = generateFeasiblePortfolios_bits(r, costs, budget)
+    Q_F, portfolio_costs = generateFeasiblePortfolios(r, costs, budget)
     end = time.time()
     print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
     
@@ -184,7 +184,7 @@ def costEfficientPortfolios_parallel(G: nx.Graph, pairs: list[tuple[int, int]], 
     r = len(node_reinforcements)
 
     start = time.time()
-    Q_F, portfolio_costs = generateFeasiblePortfolios(r, costs, budget)
+    Q_F, portfolio_costs = generateFeasiblePortfolios_old(r, costs, budget)
     end = time.time()
     print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
     
