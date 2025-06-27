@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from path import feasible_paths, terminal_pairs
-from construct_graph import generate_random_graph_with_positions
+from graph import generate_random_graph_with_positions
 from plotting import plot_network
 
 # Correct implementation

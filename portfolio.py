@@ -11,7 +11,8 @@ def generateAllPortfolios(numberOfProjects: int) -> list[list[int]]:
             projects (int): Number of projects, which are identified by index
         
         Returns:
-            list[tuple[int, ..., int]]: List of all possible portfolios, each portfolio is represented as a list of binary values signifying if a project is selected or not in the portfolio
+            list[tuple[int, ..., int]]: List of all possible portfolios, each portfolio is represented as a list of 
+                                        binary values signifying if a project is selected or not in the portfolio
     """
 
     # The generation of all portfolios when there are 25 projects took 30s on my PC
@@ -53,6 +54,7 @@ def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> t
 
     return feasible, portfolioCosts
 
+# Old inefficient version, which used lists of integers (zeros and ones) to represent portfolios
 def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
     """
         Parameters:
@@ -93,6 +95,51 @@ def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: flo
 
     return feasible, costsOfPortfolios
 
+def portfolio_as_bitmask(portfolio: list[int]) -> int:
+    return sum((bit << i) for i, bit in enumerate(portfolio))
+
+# A new improved version, which hashes the portfolios (binary vectors) to be just integers to speed up memory accesses and computations
+def generateFeasiblePortfolios_bits(noOfActions: int, costs: list[float], budget: float) -> tuple[set[int], dict[int, float]]:
+    """
+        Parameters:
+            noOfActions (int): Number of possible reinforcement actions.
+            costs (list[float]): The costs of the reinforcement actions.
+            budget (float): The budget available.
+            
+        Returns:
+            tuple[list[int], dict[tuple[int, ...], float]]: The set of feasible portfolios.
+    """
+
+    feasible: set[int] = set()
+    costsOfPortfolios: dict[int, float] = {}
+
+    visited: set[int] = set()
+
+    q = 0
+    feasible.add(q)
+    costsOfPortfolios[q] = 0
+    visited.add(q)
+
+    Q: Queue[int] = Queue()
+    Q.put(q)
+    while not Q.empty():
+        q = Q.get()
+        for i in range(noOfActions):
+            if (q >> i) & 1 == 0:
+                # Set the i:th bit (which was zero) to one
+                q_copy = q | (1 << i)
+                
+                cost = sum(costs[i] * ((q_copy >> i) & 1) for i in range(noOfActions))
+                if q_copy not in visited and cost <= budget:
+                    visited.add(q_copy)
+                    feasible.add(q_copy)
+                    costsOfPortfolios[q_copy] = cost
+                    
+                    # If strictly smaller then we explore the child nodes of this portfolio
+                    if cost < budget:
+                        Q.put(q_copy)
+
+    return feasible, costsOfPortfolios
 
 def dominates(e1: list[float], e2: list[float]) -> bool:
     """
@@ -104,7 +151,6 @@ def dominates(e1: list[float], e2: list[float]) -> bool:
         bool: True if portfolio q1 dominates portfolio q2, false otherwise.
     """
 
-    
     return all(e1[i] >= e2[i] for i in range(len(e1))) and any(e1[i] > e2[i] for i in range(len(e1)))
 
 def equal(e1: list[float], e2: list[float]) -> bool:
@@ -163,6 +209,35 @@ def costEfficient(e1: list[float], c1: float, feasiblePortfolios: list[tuple[lis
 
 if __name__ == "__main__":
     print("This file is not meant to be run directly!")
+
+    if False:
+        n = 25
+        start = time.time()
+        portfolios_old, costs_old = generateFeasiblePortfolios(n, [1.0 for _ in range(n)], n / 2)
+        end = time.time()
+        print(f"The old version took {(end-start):.2f} seconds")
+
+        start = time.time()
+        portfolios_new, costs_new = generateFeasiblePortfolios_bits(n, [1.0 for _ in range(n)], n / 2)
+        end = time.time()
+        print(f"The new algorithm took {(end-start):.2f} seconds")
+
+        portfolio_set = set()
+        for portfolio in portfolios_old:
+            portfolio_set.add(portfolio_as_bitmask(portfolio))
+        
+        print(f"The generated sets of feasible portfolios are equal: {portfolios_new == portfolio_set}")
+        print(f"The associated costs are also equal: {all([costs_old[tuple(portfolio)] == costs_new[portfolio_as_bitmask(portfolio)] for portfolio in portfolios_old])}")
+
+        # The code above yielded these results
+        """
+        The old version took 1668.15 seconds
+        The new algorithm took 318.89 seconds
+        The generated sets of feasible portfolios are equal: True
+        The associated costs are also equal: True
+        """
+
+
     if False:
         n = 20
 
@@ -175,7 +250,7 @@ if __name__ == "__main__":
         #for p in portfolios:
         #    print(p)
     
-    if True:
+    if False:
         times_old = []
         times_parallel = []
         for k in range(20, 31):

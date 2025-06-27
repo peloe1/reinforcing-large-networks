@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from construct_graph import *
+from graph import *
 
 def plot_network(G):
     pos = nx.get_node_attributes(G, 'pos')

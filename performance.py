@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import multiprocessing
 
 from reliability import terminal_pair_reliability
-from construct_graph import generate_random_graph_with_positions
+from graph import generate_random_graph_with_positions
 from path import feasible_paths
 
 
