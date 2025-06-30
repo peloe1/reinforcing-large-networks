@@ -11,8 +11,8 @@ def generateAllPortfolios(numberOfProjects: int) -> list[list[int]]:
             projects (int): Number of projects, which are identified by index
         
         Returns:
-            list[tuple[int, ..., int]]: List of all possible portfolios, each portfolio is represented as a list of 
-                                        binary values signifying if a project is selected or not in the portfolio
+            list[list[int]]: List of all possible portfolios, each portfolio is represented as a list of 
+                             binary values signifying if a project is selected or not in the portfolio
     """
 
     # The generation of all portfolios when there are 25 projects took 30s on my PC
@@ -24,7 +24,7 @@ def generateAllPortfolios(numberOfProjects: int) -> list[list[int]]:
     #return list(map(list, itertools.product([0,1], repeat = numberOfProjects)))
     return list(map(list, itertools.product([0,1], repeat = numberOfProjects)))
 
-def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict]:
+def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -32,7 +32,7 @@ def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> t
             budget (float): The budget available.
             
         Returns:
-            list[tuple[int, ..., int]]: The set of feasible portfolios.
+            tuple[list[list[int]], dict[tuple[int, ...], float]]: The set of feasible portfolios as a list of portfolios and their costs in a dictionary.
     """
 
     feasible = []
@@ -63,7 +63,7 @@ def generateFeasiblePortfolios_old(noOfActions: int, costs: list[float], budget:
             budget (float): The budget available.
             
         Returns:
-            tuple[list[int], dict[tuple[int, ...], float]]: The set of feasible portfolios.
+            tuple[list[list[int]], dict[tuple[int, ...], float]]: The set of feasible portfolios and their costs in a dictionary.
     """
 
     feasible = []
@@ -107,7 +107,7 @@ def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: flo
             budget (float): The budget available.
             
         Returns:
-            tuple[list[int], dict[tuple[int, ...], float]]: The set of feasible portfolios.
+            tuple[set[int], dict[int, float]]: The set of feasible portfolios as integers and their costs in a dictionary.
     """
 
     feasible: set[int] = set()
@@ -144,8 +144,8 @@ def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: flo
 def dominates(e1: list[float], e2: list[float]) -> bool:
     """
     Parameters:
-        e1 (float): Expected values of portfolio q1.
-        e2 (float): Expected values of portfolio q2.
+        e1 (list[float]): Expected values of portfolio q1.
+        e2 (list[float]): Expected values of portfolio q2.
 
     Returns:
         bool: True if portfolio q1 dominates portfolio q2, false otherwise.

@@ -11,7 +11,7 @@ from graph import generate_random_graph_with_positions
 from plotting import plot_network
 
 # Correct implementation
-def probability_of_event(G: nx.Graph, E: np.ndarray) -> float:
+def probability_of_event(G: nx.Graph, event: np.ndarray) -> float:
     """
         Parameters:
         -----------
@@ -30,7 +30,7 @@ def probability_of_event(G: nx.Graph, E: np.ndarray) -> float:
     """
 
     prob = 1.0
-    for node, e in enumerate(E):
+    for node, e in enumerate(event):
         if e == 1:
             prob *= G.nodes[node]['reliability']
         elif e == -1:
@@ -39,63 +39,57 @@ def probability_of_event(G: nx.Graph, E: np.ndarray) -> float:
 
 
 # Modified Dotson algorithm
-def terminal_pair_reliability(G: nx.Graph, feasiblePaths: list[np.ndarray]) -> float:
+# TODO: Perhaps add the list of disruption parameters as a parameter to avoid the G.nodes[node]['reliability'] lookup, which may be unoptimal.
+def terminal_pair_reliability(G: nx.Graph, P_t: list[np.ndarray]) -> float:
     """
         Parameters:
         -----------
         G: nx.Graph
             Graph object
-        feasiblePaths: list[np.ndarray]
-            List of feasible paths between some particular terminal pair represented with 1D NumPy arrays
-        disruptedNode: int
-            Node that is fixed to be disrupted. Used when computing the risk achievement worths
-
+        P_t: list[np.ndarray]
+            List of feasible paths between some particular terminal pair t represented with a NumPy array of 1D NumPy arrays containing integers
+        
         Returns:
         --------
         R: float
             Terminal pair reliability
     """
-    if len(feasiblePaths) == 0:
+    if len(P_t) == 0:
         return 0.0
     
-    R = 0
-    E_0 = np.zeros(G.number_of_nodes(), dtype=int)
+    R_t = 0
+    X_0 = np.zeros(G.number_of_nodes(), dtype=int)
 
     Q = Queue()
-    Q.put(E_0)
+    Q.put(X_0)
 
     visited = set()
-    visited.add(tuple(E_0))
+    visited.add(tuple(X_0))
 
-    paths: list[np.ndarray] = sorted(feasiblePaths, key = lambda path: len(path))
+    paths: list[np.ndarray] = sorted(P_t, key = lambda path: len(path))
     while not Q.empty():
-        E = Q.get()
+        X = Q.get()
 
         for i, path in enumerate(paths):
-            if np.all(E[path] != -1):
+            if np.all(X[path] != -1):
                 shortest_path = paths.pop(i)
-                E1 = E.copy()
-                E1[shortest_path] = 1
+                X1 = X.copy()
+                X1[shortest_path] = 1
                 
-                R += probability_of_event(G, E1)
+                R_t += probability_of_event(G, X1)
 
                 # Add the complement events to the queue
                 for node in shortest_path:
-                    complement = E1.copy()
+                    complement = X1.copy()
                     complement[node] = -1
                     complement[complement == 1] = 0
                     t = tuple(complement)
                     if t not in visited:
                         visited.add(t)
                         Q.put(complement)
-
                 break
-    
-    if R > 1:
-        print("Reliability = {}".format(R))
-        return -1
 
-    return R
+    return R_t
 
 # Redundant helper function
 def probability_of_state(G: nx.Graph, state: np.ndarray) -> float:
@@ -104,7 +98,7 @@ def probability_of_state(G: nx.Graph, state: np.ndarray) -> float:
         -----------
         G: nx.Graph
             Graph object
-        state: list[int]
+        state: np.ndarray
             List of events
 
         Returns:

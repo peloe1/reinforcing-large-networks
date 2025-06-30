@@ -30,7 +30,7 @@ def costEfficientPortfolios_old(G: nx.Graph, pairs: list[tuple[int, int]], paths
     Q = [[0 for _ in range(r)]]
     #print(f"Q^0: {Q}")
 
-    performance = expected_traffic_volumes(G, pairs, paths, traffic_volumes, extreme_points)
+    performance = expected_traffic_volumes(G, paths, traffic_volumes, extreme_points)
     performances: dict[tuple[int, ...], list[float]] = {tuple(Q[0]): performance}
 
     for l in range(r):
@@ -53,7 +53,7 @@ def costEfficientPortfolios_old(G: nx.Graph, pairs: list[tuple[int, int]], paths
 
 
             # Next we can calculate the expected performances of G_q
-            performance = expected_traffic_volumes(G_q, pairs, paths, traffic_volumes, extreme_points)
+            performance = expected_traffic_volumes(G_q, paths, traffic_volumes, extreme_points)
             performances[tuple(portfolio)] = performance # Step 6
 
         # The approach from Joaquin's paper
@@ -101,7 +101,7 @@ def costEfficientPortfolios(G: nx.Graph, pairs: list[tuple[int, int]], paths: di
     
     Q: set[int] = set([0])
 
-    performance = expected_traffic_volumes(G, pairs, paths, traffic_volumes, extreme_points)
+    performance = expected_traffic_volumes(G, paths, traffic_volumes, extreme_points)
     performances: dict[int, list[float]] = {0: performance}
 
     for l in range(r):
@@ -130,7 +130,7 @@ def costEfficientPortfolios(G: nx.Graph, pairs: list[tuple[int, int]], paths: di
 
 
             # Next we can calculate the expected performances of G_q
-            performance = expected_traffic_volumes(G_q, pairs, paths, traffic_volumes, extreme_points)
+            performance = expected_traffic_volumes(G_q, paths, traffic_volumes, extreme_points)
             performances[portfolio] = performance # Step 6
 
         # The approach from Joaquin's paper
@@ -166,7 +166,7 @@ def applyPortfolioAndComputePerformance(G: nx.Graph,
     for k, (node, prob) in enumerate(node_reinforcements):
         if portfolio[k] == 1:
             G_q.nodes[node]['reliability'] = prob
-    performance = expected_traffic_volumes(G_q, pairs, paths, traffic_volumes, extreme_points)
+    performance = expected_traffic_volumes(G_q, paths, traffic_volumes, extreme_points)
     performances_shared[tuple(portfolio)] = performance
 
 def costEfficientPortfolios_parallel(G: nx.Graph, pairs: list[tuple[int, int]], paths: dict[tuple[int, int], list[np.ndarray]], traffic_volumes: dict[tuple[int, int], float], extreme_points: np.ndarray, node_reinforcements: list[tuple[int, float]], costs: list[float], budget: float, verbose=False) -> tuple[list[list[int]], dict[tuple[int, ...], list[float]]]:
@@ -190,7 +190,7 @@ def costEfficientPortfolios_parallel(G: nx.Graph, pairs: list[tuple[int, int]], 
     
     Q = [[0 for _ in range(r)]]
 
-    performance = expected_traffic_volumes(G, pairs, paths, traffic_volumes, extreme_points)
+    performance = expected_traffic_volumes(G, paths, traffic_volumes, extreme_points)
     performances: dict[tuple[int, ...], list[float]] = {tuple(Q[0]): performance}
 
     threshold = min(15, r)
@@ -214,7 +214,7 @@ def costEfficientPortfolios_parallel(G: nx.Graph, pairs: list[tuple[int, int]], 
                     G_q.nodes[node]['reliability'] = prob
 
             # Next we can calculate the expected performances of G_q
-            performance = expected_traffic_volumes(G_q, pairs, paths, traffic_volumes, extreme_points)
+            performance = expected_traffic_volumes(G_q, paths, traffic_volumes, extreme_points)
             performances[tuple(portfolio)] = performance # Step 6
 
         # The approach from Joaquin's paper

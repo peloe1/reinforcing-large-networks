@@ -2,9 +2,10 @@ import contextlib
 import os
 import sys
 
+# Avoid printing the annoying error message
 with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
     import polytope as pc  # or wherever the message gets triggered
-#import polytope as pc
+
 import numpy as np
 
 
