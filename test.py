@@ -5,7 +5,7 @@ import random
 
 from information_set import compute_extreme_points
 from portfolio import portfolio_as_bitmask
-from ce_portfolios import costEfficientPortfolios_old, costEfficientPortfolios
+from ce_portfolios import cost_efficient_portfolios_old, cost_efficient_portfolios
 from path import simple_paths, terminal_pairs
 from path import feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions
@@ -45,7 +45,7 @@ def speedTest() -> None:
     print("-----------------------------------------")
     print("Original version with lists of integers")
     start = time.time()
-    Q_1, portfolio_costs = costEfficientPortfolios_old(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
+    Q_1, portfolio_costs = cost_efficient_portfolios_old(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
     #Q_1 = []
     end = time.time()
     if end - start > 60:
@@ -58,7 +58,7 @@ def speedTest() -> None:
     print("-----------------------------------------")
     print("New version with binary representation")
     start = time.time()
-    Q_2, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
+    Q_2, portfolio_costs = cost_efficient_portfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
     end = time.time()
     if end - start > 60:
         print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")

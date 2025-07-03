@@ -5,10 +5,10 @@ from queue import Queue
 import random
 import matplotlib.pyplot as plt
 
-def generateAllPortfolios(numberOfProjects: int) -> list[list[int]]:
+def generate_all_portfolios(numberOfProjects: int) -> list[list[int]]:
     """
         Parameters:
-            projects (int): Number of projects, which are identified by index
+            numberOfProjects (int): Number of projects, which are identified by index
         
         Returns:
             list[list[int]]: List of all possible portfolios, each portfolio is represented as a list of 
@@ -24,7 +24,7 @@ def generateAllPortfolios(numberOfProjects: int) -> list[list[int]]:
     #return list(map(list, itertools.product([0,1], repeat = numberOfProjects)))
     return list(map(list, itertools.product([0,1], repeat = numberOfProjects)))
 
-def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
+def feasible_portfolios_filter(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -36,7 +36,7 @@ def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> t
     """
 
     feasible = []
-    allPortfolios = np.array(generateAllPortfolios(noOfActions))
+    allPortfolios = np.array(generate_all_portfolios(noOfActions))
     costsArray = np.array(costs)
     budgetArray = np.full(2**noOfActions, budget)
     costsOfPortfolios = np.sum(allPortfolios * costsArray, axis=1)
@@ -55,7 +55,7 @@ def feasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> t
     return feasible, portfolioCosts
 
 # Old inefficient version, which used lists of integers (zeros and ones) to represent portfolios
-def generateFeasiblePortfolios_old(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
+def generate_feasible_portfolios_old(noOfActions: int, costs: list[float], budget: float) -> tuple[list[list[int]], dict[tuple[int, ...], float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -98,8 +98,10 @@ def generateFeasiblePortfolios_old(noOfActions: int, costs: list[float], budget:
 def portfolio_as_bitmask(portfolio: list[int]) -> int:
     return sum((bit << i) for i, bit in enumerate(portfolio))
 
-# A new improved version, which hashes the portfolios (binary vectors) to be just integers to speed up memory accesses and computations
-def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[set[int], dict[int, float]]:
+# A new improved version, which hashes the portfolios (binary vectors) to integers (using the trivial choice for hash function) to speed up memory accesses and computations
+# q_i = 1 refers the the ith reinforcement action being selected in portfolio q, its corresponding node it is associated with is abstracted away here, but is 
+# accessible in nodeReinforcements variable in cost_efficient_portfolios function in ce_portfolios.py, the indexes of that list are the indexes i here.
+def generate_feasible_portfolios(noOfActions: int, costs: list[float], budget: float) -> tuple[set[int], dict[int, float]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -125,8 +127,8 @@ def generateFeasiblePortfolios(noOfActions: int, costs: list[float], budget: flo
     while not Q.empty():
         q = Q.get()
         for i in range(noOfActions):
-            if (q >> i) & 1 == 0:
-                # Set the i:th bit (which was zero) to one
+            if not (q >> i) & 1: # True if the ith bit is zero
+                # Set the ith bit (which was zero) to one
                 q_copy = q | (1 << i)
                 
                 cost = sum(costs[i] * ((q_copy >> i) & 1) for i in range(noOfActions))
@@ -166,7 +168,7 @@ def equal(e1: list[float], e2: list[float]) -> bool:
     return all(e1[i] == e2[i] for i in range(len(e1))) # alternate way to check this
     #return np.array_equal(e1, e2)
 
-def dominatesWithCost(e1: list[float], e2: list[float], c1: float, c2: float) -> bool:
+def dominates_with_cost(e1: list[float], e2: list[float], c1: float, c2: float) -> bool:
     """
     Parameters:
         e1 (list[float]): Expected performances of portfolio q1.
@@ -180,7 +182,7 @@ def dominatesWithCost(e1: list[float], e2: list[float], c1: float, c2: float) ->
 
     return (dominates(e1, e2) and c1 <= c2) or (equal(e1, e2) and c1 < c2)
 
-def costEfficient(e1: list[float], c1: float, feasiblePortfolios: list[tuple[list[float], float]]) -> bool:
+def cost_efficient(e1: list[float], c1: float, feasiblePortfolios: list[tuple[list[float], float]]) -> bool:
     """
     Parameters:
         e1 (list[float]): Expected values of portfolio q1 for each extreme point.
@@ -204,7 +206,7 @@ def costEfficient(e1: list[float], c1: float, feasiblePortfolios: list[tuple[lis
     #return not dominated
     #return not any(dominatesWithCost(e2, e1, costOfPortfolios[tuple(q2)], c1) for q2, e2 in feasiblePortfolios if q1 != q2)
 
-    return not any(dominatesWithCost(e2, e1, c2, c1) for e2, c2 in feasiblePortfolios)# if q1 != q2) # Removing this check made it work? WTF
+    return not any(dominates_with_cost(e2, e1, c2, c1) for e2, c2 in feasiblePortfolios)# if q1 != q2) # Removing this check made it work? WTF
 
 
 if __name__ == "__main__":
@@ -213,7 +215,7 @@ if __name__ == "__main__":
     if False:
         n = 25
         start = time.time()
-        portfolios_old, costs_old = generateFeasiblePortfolios(n, [1.0 for _ in range(n)], n / 2)
+        portfolios_old, costs_old = generate_feasible_portfolios(n, [1.0 for _ in range(n)], n / 2)
         end = time.time()
         print(f"The old version took {(end-start):.2f} seconds")
 
@@ -242,7 +244,7 @@ if __name__ == "__main__":
         n = 20
 
         start = time.time()
-        portfolios = generateAllPortfolios(n) # This works
+        portfolios = generate_all_portfolios(n) # This works
         end = time.time()
         
         print(f"Time to generate all portfolios: {(end - start):.2f}")
@@ -263,7 +265,7 @@ if __name__ == "__main__":
                 budget = k / 2.5
 
                 start = time.time()
-                feasible, feasibleCosts = generateFeasiblePortfolios(numberOfActions, costs, budget)
+                feasible, feasibleCosts = generate_feasible_portfolios(numberOfActions, costs, budget)
                 end = time.time()
                 #print(f"Time to generate all feasible portfolios with the old method: {(end - start):.2f}")
 
@@ -286,7 +288,7 @@ if __name__ == "__main__":
     if False:
         costs = [2.0,2,3]
 
-        feasible, feasibleCosts = feasiblePortfolios(3, costs, 5) # This works
+        feasible, feasibleCosts = feasible_portfolios_filter(3, costs, 5) # This works
         for f in feasible:
             print(f"{f}: {sum(costs[i] * f[i] for i in range(len(costs)))}")
         
@@ -298,7 +300,7 @@ if __name__ == "__main__":
         c2 = 0.75
         #print(dominates(e1, e2)) # Works
         print(equal(e1, e2)) # Works
-        print(dominatesWithCost(e1, e2, c1, c2)) # Works
+        print(dominates_with_cost(e1, e2, c1, c2)) # Works
 
         performances = [[1,2], [2,4], [2,2], [2,5], [2,1.5], [3,5], [3,5]]
         costsOfPortfolios = [sum(costs[i] * portfolio[i] for i in range(len(portfolio))) for portfolio in feasible] # Correct

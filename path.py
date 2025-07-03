@@ -1,4 +1,3 @@
-from importlib import simple
 import numpy as np
 import networkx as nx
 import random
@@ -7,7 +6,7 @@ def terminal_pairs(terminal_nodes: list[int]) -> list[tuple[int, int]]:
     """
         Parameters:
         -----------
-        terminal_nodes: np.ndarray
+        terminal_nodes: list[int]
             A 1D NumPy array of terminal nodes.
 
         Returns:

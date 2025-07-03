@@ -4,10 +4,9 @@ import numpy as np
 import random
 
 from information_set import compute_extreme_points
-from portfolio import portfolio_as_bitmask
-from ce_portfolios import costEfficientPortfolios_old, costEfficientPortfolios
-from path import simple_paths, terminal_pairs
-from path import feasible_paths
+from portfolio import generate_feasible_portfolios
+from ce_portfolios import cost_efficient_portfolios
+from path import terminal_pairs, feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions
 
 
@@ -25,7 +24,7 @@ def main() -> None:
     for node in terminal_nodes:
         reliabilities[node] = 1.0
     
-    G = construct_graph(filename, reliabilities)
+    G: nx.Graph = construct_graph(filename, reliabilities)
 
     for node in terminal_nodes:
         G.nodes[node]['reliability'] = 1
@@ -39,12 +38,17 @@ def main() -> None:
     node_reinforcements = [(i, 0.995) for i in range(r)]
     costs = [1.0 for _ in range(r)]
     budget = 12
+
+    start = time.time()
+    Q_F, feasible_portfolio_costs = generate_feasible_portfolios(r, costs, budget)
+    end = time.time()
+    print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
     
 
     print("-----------------------------------------")
     print("New version with binary representation")
     start = time.time()
-    Q_CE, portfolio_costs = costEfficientPortfolios(G, terminal_node_pairs, paths, traffic_volumes, extremePoints, node_reinforcements, costs, budget, False)
+    Q_CE, portfolio_costs = cost_efficient_portfolios(G, paths, traffic_volumes, extremePoints, node_reinforcements, Q_F, feasible_portfolio_costs , False)
     end = time.time()
     if end - start > 60:
         print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
