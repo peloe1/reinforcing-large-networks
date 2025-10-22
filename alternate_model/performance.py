@@ -6,7 +6,7 @@ from reliability import terminal_pair_reliability
 # TODO: Perhaps parallelize this
 def utility_functions(G: nx.Graph,
                       paths: dict[tuple[int, int], list[np.ndarray]]
-                     ) -> np.ndarray:
+                     ) -> list[float]:
     """
         Parameters: 
         -----------
@@ -24,8 +24,6 @@ def utility_functions(G: nx.Graph,
         U: list[float]
             List of expected traffic volumes for each extreme point
     """
-    u_t: np.ndarray = np.zeros(len(paths))
-    for i, (_, path) in enumerate(paths.items()):
-        u_t[i] = terminal_pair_reliability(G, path)
+    u_t: list[float] = [terminal_pair_reliability(G, path) for _, path in paths.items()]
 
     return u_t

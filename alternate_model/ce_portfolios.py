@@ -27,8 +27,8 @@ def cost_efficient_portfolios(G: nx.Graph, paths: dict[tuple[int, int], list[np.
     r = len(node_reinforcements)
     Q: set[int] = set([0])
 
-    performance: np.ndarray = utility_functions(G, paths)
-    performances: dict[int, np.ndarray] = {0: performance}
+    performance: list[float] = utility_functions(G, paths)
+    performances: dict[int, list[float]] = {0: performance}
 
     for l in range(r):
         start = time.time()

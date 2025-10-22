@@ -5,7 +5,7 @@ from graph import *
 
 def plot_network(G):
     pos = nx.get_node_attributes(G, 'pos')
-    nx.draw(G=G, with_labels=True, labels=nx.get_node_attributes(G, 'label'), pos=pos, node_color='blue', edge_color='gray', node_size=1)
+    nx.draw(G=G, with_labels=False, labels=nx.get_node_attributes(G, 'label'), pos=pos, node_color='blue', edge_color='gray', node_size=1)
     plt.show()
 
 
