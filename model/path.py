@@ -45,6 +45,8 @@ def simple_paths(G: nx.Graph, terminal_node_pairs: list[tuple[int, int]]) -> dic
 
     return paths
 
+# TODO: This computes the turn angle based on the angle between the primary switches, 
+# not based on the actual track geometry, perhaps store the angle in the node attributes when compiling the graph?
 def filter_paths(G: nx.Graph, paths: list[np.ndarray]) -> list[np.ndarray]:
     """
         Parameters:

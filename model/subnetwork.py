@@ -5,14 +5,20 @@ import multiprocessing as mp
 from multiprocessing import Manager
 
 from portfolio import dominates_with_cost, generate_feasible_portfolios_old, generate_feasible_portfolios
-from performance import utility_functions
+from performance import expected_travel
 
 
 def bitmask_to_portfolio(mask: int, r: int) -> list[int]:
     return [(mask >> i) & 1 for i in range(r)]
 
 # TODO: Make this work for general node reinforcement indices, not just 0, 1, ..., r
-def cost_efficient_portfolios(G: nx.Graph, paths: dict[tuple[int, int], list[np.ndarray]], node_reinforcements: list[tuple[int, float]], Q_F: set[int], portfolio_costs: dict[int, float], verbose=False) -> tuple[set[int], dict[int, list[float]]]:
+def cost_efficient_portfolios(G: nx.Graph, 
+                              paths: dict[tuple[int, int], list[np.ndarray]], 
+                              node_reinforcements: list[tuple[int, float]], 
+                              Q_F: set[int], 
+                              portfolio_costs: dict[int, list[float]], 
+                              travel_volumes: dict[tuple[int, int], float],
+                              verbose=False) -> tuple[set[int], dict[int, list[float]]]:
     """
     Parameters:
         G (networkx.Graph): The graph in its original state with no portfolios applied and no disruptions.
@@ -27,7 +33,7 @@ def cost_efficient_portfolios(G: nx.Graph, paths: dict[tuple[int, int], list[np.
     r = len(node_reinforcements)
     Q: set[int] = set([0])
 
-    performance: list[float] = utility_functions(G, paths)
+    performance: float = expected_travel(G, paths, travel_volumes)
     performances: dict[int, list[float]] = {0: performance}
 
     for l in range(r):
@@ -56,7 +62,7 @@ def cost_efficient_portfolios(G: nx.Graph, paths: dict[tuple[int, int], list[np.
 
 
             # Next we can calculate the expected performances of G_q
-            performance = utility_functions(G_q, paths)
+            performance = expected_travel(G_q, paths, travel_volumes)
             performances[portfolio] = performance # Step 6
 
         # The approach from Joaquin's paper
