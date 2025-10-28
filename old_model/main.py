@@ -6,7 +6,7 @@ import random
 from information_set import compute_extreme_points
 from portfolio import generate_feasible_portfolios
 from ce_portfolios import cost_efficient_portfolios
-from path import terminal_pairs, feasible_paths
+from model.path import terminal_pairs, feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions
 
 

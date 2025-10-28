@@ -6,8 +6,8 @@ import random
 from information_set import compute_extreme_points
 from portfolio import portfolio_as_bitmask, generate_feasible_portfolios
 from model.subnetwork import cost_efficient_portfolios
-from path import simple_paths, terminal_pairs
-from path import feasible_paths
+from model.path import simple_paths, terminal_pairs
+from model.path import feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions
 
 

@@ -146,30 +146,6 @@ def generate_feasible_portfolios(noOfActions: int, costs: dict[int, list[float]]
 
     return feasible, costsOfPortfolios
 
-def dominates(e1:float, e2: float) -> bool:
-    """
-    Parameters:
-        e1 (float): Utilities when portfolio q1 has been applied.
-        e2 (float): Utilities when portfolio q2 has been applied.
-
-    Returns:
-        bool: True if portfolio q1 dominates portfolio q2, false otherwise.
-    """
-
-    return e1 > e2
-
-def equal(e1: float, e2: float) -> bool:
-    """
-    Parameters:
-        e1 (float): Utilities when portfolio q1 has been applied.
-        e2 (float): Utilities when portfolio q2 has been applied.
-
-    Returns:
-        bool: True if portfolios q1 and q2 are equally efficient.
-    """
-
-    return e1 == e2
-
 def dominates_with_cost(e1: list[float], e2: list[float], c1: list[float], c2: list[float]) -> bool:
     """
     Parameters:
@@ -182,7 +158,7 @@ def dominates_with_cost(e1: list[float], e2: list[float], c1: list[float], c2: l
         bool: True if portfolio q1 dominates portfolio q2 taking account the cost, false otherwise.
     """
 
-    return (dominates(e1, e2) and all(c1[j] <= c2[j] for j in range(len(c1)))) or (equal(e1, e2) and all(c1[j] <= c2[j] for j in range(len(c1))) and any(c1[j] < c2[j] for j in range(len(c1))))
+    return (e1 > e2 and all(c1[j] <= c2[j] for j in range(len(c1)))) or (e1 == e2 and all(c1[j] <= c2[j] for j in range(len(c1))) and any(c1[j] < c2[j] for j in range(len(c1))))
 
 def cost_efficient(e1: list[float], c1: list[float], feasiblePortfolios: list[tuple[list[float], float]]) -> bool:
     """

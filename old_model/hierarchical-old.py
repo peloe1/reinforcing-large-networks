@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-from path import feasible_paths
+from model.path import feasible_paths
 from portfolio import generate_feasible_portfolios, dominates_with_cost
 from model.subnetwork import cost_efficient_portfolios
 import itertools

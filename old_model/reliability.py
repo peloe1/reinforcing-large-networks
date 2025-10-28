@@ -6,7 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from path import feasible_paths, terminal_pairs
+from model.path import feasible_paths, terminal_pairs
 from graph import generate_random_graph_with_positions
 from plotting import plot_network
 

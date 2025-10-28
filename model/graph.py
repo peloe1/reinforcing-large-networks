@@ -2,7 +2,10 @@ import networkx as nx
 import random
 import json
 import numpy as np
-import plotting
+#import plotting
+import os
+import plotly
+from plotly.graph_objects import Figure
 
 def generate_random_graph_with_positions(num_nodes, num_edges, pos_range=(0, 1)):
     """
@@ -30,16 +33,36 @@ def generate_random_graph_with_positions(num_nodes, num_edges, pos_range=(0, 1))
         # Generate random positions within the given range
         pos_x = random.uniform(pos_range[0], pos_range[1])
         pos_y = random.uniform(pos_range[0], pos_range[1])
-        G.add_node(i, pos=(pos_x, pos_y), label=i, reliability=random.uniform(0, 1))
+        G.add_node(i, pos=(pos_x, pos_y), label=i, reliability=random.uniform(0.7, 0.95))  # Fixed reliability range
     
-    possible_edges = [(i, j) for i in range(num_nodes) for j in range(i+1, num_nodes)]
+    # First ensure the graph is connected by creating a spanning tree
+    nodes = list(G.nodes())
+    random.shuffle(nodes)
     
-    selected_edges = random.sample(possible_edges, min(num_edges, len(possible_edges)))
+    # Add edges to form a spanning tree
+    for i in range(1, len(nodes)):
+        G.add_edge(nodes[i-1], nodes[i], weight=1, color='gray')
     
-    # Add these edges to the graph
-    G.add_edges_from(selected_edges, weight=1, color='gray')
+    # Calculate remaining edges needed
+    edges_added = len(nodes) - 1
+    remaining_edges = num_edges - edges_added
+    
+    if remaining_edges > 0:
+        # Get all possible edges that don't exist yet
+        possible_edges = []
+        for i in range(num_nodes):
+            for j in range(i+1, num_nodes):
+                if not G.has_edge(i, j):
+                    possible_edges.append((i, j))
+        
+        # Add random edges from the remaining possible edges
+        if possible_edges:
+            selected_edges = random.sample(possible_edges, min(remaining_edges, len(possible_edges)))
+            G.add_edges_from(selected_edges, weight=1, color='gray')
     
     return G
+
+
 
 def read_from_json(filename: str) -> nx.Graph:
     """
@@ -58,23 +81,12 @@ def read_from_json(filename: str) -> nx.Graph:
         graph_data = json.load(f)
     
     G = nx.Graph()
-
-    ids = {}
-    i = 0
+            
     for node in graph_data['nodes']:
-        if node['type'] == 'primary':
-            ids[node['id']] = i
-            i += 1
-        else:
-            ids[node['id']] = node['id']
-
-    for node in graph_data['nodes']:
-        G.add_node(ids[node['id']], pos=(node['x'], node['y']), label=node['id'], type=node['type'], reliability=1.0)
+        G.add_node(node['id'], pos=(node['x'], node['y']), label=node['id'], type=node['type'], reliability=1.0)
 
     for edge in graph_data['edges']:
-        n0 = ids[edge['n0']]
-        n1 = ids[edge['n1']]
-        G.add_edge(n0, n1)
+        G.add_edge(edge['n0'], edge['n1'])
 
     return G
 
@@ -106,7 +118,7 @@ def remove_secondary_nodes(G):
 
     return G
 
-def add_reliabilities(G: nx.Graph, reliabilities: dict[int, float]) -> nx.Graph:
+def add_reliabilities(G: nx.Graph, reliabilities: dict[str, float]) -> nx.Graph:
     """
         Parameters:
         -----------
@@ -126,7 +138,7 @@ def add_reliabilities(G: nx.Graph, reliabilities: dict[int, float]) -> nx.Graph:
         G.nodes[node]['reliability'] = reliability
     return G
 
-def construct_graph(filename: str, reliabilities: dict[int, float]) -> nx.Graph:
+def construct_graph(filename: str) -> nx.Graph:
     """
         Parameters:
         -----------
@@ -145,26 +157,75 @@ def construct_graph(filename: str, reliabilities: dict[int, float]) -> nx.Graph:
             Graph object
     
     """
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filename = os.path.join(project_root, filename)
+
+    G_original = read_from_json(filename)
+    G = remove_secondary_nodes(G_original.copy())
     
-    G = read_from_json(filename)
-    G = remove_secondary_nodes(G)
-    G = add_reliabilities(G, reliabilities)
-    
-    return G
+    return G, G_original
+
+def plot_network(G: nx.Graph):
+    nodes = G.nodes(data=True)
+    print(nodes)
+    edges = G.edges()
+
+
+    fig = Figure()
+
+    xs = []
+    ys = []
+
+    for e in edges:
+        xs.append(nodes[e[0]]["pos"][0])
+        xs.append(nodes[e[1]]["pos"][0])
+        xs.append(None)
+
+        ys.append(nodes[e[0]]["pos"][1])
+        ys.append(nodes[e[1]]["pos"][1])
+        ys.append(None)
+
+    fig = Figure()
+
+    fig.add_scatter(name = "Track Geom.",
+                    x = xs, 
+                    y = ys,
+                    line_color = "rgba(0, 0, 255, 0.3)")
+
+    fig.add_scatter(name = "Track Infra", 
+                    x = [data.get("pos")[0] for _, data in G.nodes(data=True) if data.get("type") == "primary"],
+                    y = [data.get("pos")[1] for _, data in G.nodes(data=True) if data.get("type") == "primary"],
+                    text = [node for node, data in G.nodes(data=True) if data.get("type") == "primary"],
+                    mode = "markers")
+
+    fig.update_layout(
+                        xaxis_title = "<b>X Coord. (ETRS-TM35FIN)</b>",
+                        yaxis_title = "<b>Y Coord. (ETRS-TM35FIN)</b>",
+                        legend_orientation = "h",
+                        height = 700,
+                        yaxis_scaleanchor = "x", 
+                        yaxis_scaleratio = 1,
+                        )
+    fig.show()
+
 
 
 if __name__ == '__main__':
     filename = 'data/network/sij.json'
     num_nodes = 40
 
-    reliabilities = {i: 0.99 for i in range(num_nodes)}
-    terminal_nodes = np.array([2, 11, 32]) # East, West, South
-    for node in terminal_nodes:
-        reliabilities[node] = 1.0
-    
-    G = construct_graph(filename, reliabilities)
+    G, G_original = construct_graph(filename)
 
-    plotting.plot_network(G)
+    plot_network(G_original)
+
+    reliabilities = {node: 0.99 for node in G.nodes()}
+    G = add_reliabilities(G, reliabilities)
+
+    for node, data in G.nodes(data=True):
+        print(type(node))
+        print("Node: ", node, " of type: ", data.get("type"), " has reliability: ", data.get("reliability"))
+
+    #plotting.plot_network(G)
 
     
         

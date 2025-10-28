@@ -29,8 +29,8 @@ def utility_functions(G: nx.Graph,
     return u_t
 
 def expected_travel(G: nx.Graph,
-                    all_paths: dict[tuple[int, int], list[np.ndarray]],
-                    travel_volumes: dict[tuple[int, int], float]
+                    all_paths: dict[tuple[str, str], list[np.ndarray]],
+                    travel_volumes: dict[tuple[str, str], float]
                     ) -> float:
     """
         Parameters: 

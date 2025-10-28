@@ -1,23 +1,23 @@
 # %%
-import builtins
+#import builtins
 #from builtins import *
-
-import jsons
+#import jsons
+#import json
+from graph import construct_graph
 
 import plotly
 from plotly.graph_objects import Figure
 
 # %%
 #network_file_path = f"{__file__}/../../data/network/sij.json"
-network_file_path = "data/network/sij.json"
-network_file = builtins.open(network_file_path)
-network = jsons.loads(network_file.read())
-network_file.close()
+filename = 'data/network/sij.json'
 
-nodes = network["nodes"]
-id_to_node = {n["id"]: n for n in nodes}
+network, _ = construct_graph(filename)
 
-edges = [(id_to_node[e["n0"]], id_to_node[e["n1"]]) for e in network["edges"]]
+
+nodes = network.nodes(data=True)
+edges = network.edges(data=True)
+
 # %%
 fig = Figure()
 

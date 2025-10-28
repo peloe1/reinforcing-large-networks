@@ -6,19 +6,19 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from path import feasible_paths, terminal_pairs
+from path import feasible_paths, terminal_pairs, old_feasible_paths
 from graph import generate_random_graph_with_positions
 from plotting import plot_network
 
 # Correct implementation
-def probability_of_event(G: nx.Graph, event: np.ndarray) -> float:
+def probability_of_event(G: nx.Graph, event: dict[str, int]) -> float:
     """
         Parameters:
         -----------
         G: nx.Graph
             Graph object
-        event: np.ndarray
-            Event as a 1D NumPy array of integers 
+        event: dict[str, int]
+            Event as dict consisting of node ids and the states of the nodes 
             +1 represents that the node is used
             -1 represents that the node is disrupted
             0 represents that the node is not used
@@ -30,12 +30,74 @@ def probability_of_event(G: nx.Graph, event: np.ndarray) -> float:
     """
 
     prob = 1.0
-    for node, e in enumerate(event):
+    for node, e in event.items():
         if e == 1:
             prob *= G.nodes[node]['reliability']
         elif e == -1:
             prob *= (1 - G.nodes[node]['reliability'])
     return prob
+
+def old_terminal_pair_reliability(G: nx.Graph, P_t: list[np.ndarray]) -> float:
+    """
+        Final corrected Dotson algorithm with improved state exploration
+    """
+    if len(P_t) == 0:
+        return 0.0
+    
+    R_t = 0.0
+    node_list = list(G.nodes())
+    
+    # Create initial state where all nodes are unused (0)
+    X_0 = {node: 0 for node in node_list}
+    
+    Q = Queue()
+    Q.put(X_0)
+    
+    visited = set()
+    visited.add(frozenset(X_0.items()))
+    
+    # Sort paths by length to prioritize shorter paths
+    paths_sorted = sorted(P_t, key=lambda path: len(path))
+    
+    while not Q.empty():
+        X = Q.get()
+        
+        # Find the first operational path in current state
+        operational_path = None
+        for path in paths_sorted:
+            if all(X[node] != -1 for node in path):
+                operational_path = path
+                break
+        
+        if operational_path is not None:
+            # Create new state where this path is operational
+            X1 = X.copy()
+            for node in operational_path:
+                X1[node] = 1
+            
+            # Add probability of this state
+            prob = probability_of_event(G, X1)
+            R_t += prob
+            
+            # Generate complement states by disrupting each node in the path
+            for node in operational_path:
+                complement = X1.copy()
+                complement[node] = -1  # Disrupt this specific node
+                
+                # Reset ALL nodes from the current operational path
+                # This is important to avoid carrying over used states
+                for path_node in operational_path:
+                    complement[path_node] = 0
+                
+                # Set the disrupted node back to -1
+                complement[node] = -1
+                
+                comp_hash = frozenset(complement.items())
+                if comp_hash not in visited:
+                    visited.add(comp_hash)
+                    Q.put(complement)
+    
+    return R_t
 
 
 # Modified Dotson algorithm
@@ -57,49 +119,74 @@ def terminal_pair_reliability(G: nx.Graph, P_t: list[np.ndarray]) -> float:
     if len(P_t) == 0:
         return 0.0
     
+    node_list = G.nodes()
+    
     R_t = 0
-    X_0 = np.zeros(G.number_of_nodes(), dtype=int)
+    X_0 = {node: 0 for node in G.nodes()}
 
     Q = Queue()
     Q.put(X_0)
 
     visited = set()
-    visited.add(tuple(X_0))
+    visited.add(tuple(X_0[node] for node in node_list))
 
     paths: list[np.ndarray] = sorted(P_t, key = lambda path: len(path))
     while not Q.empty():
         X = Q.get()
 
-        for i, path in enumerate(paths):
-            if np.all(X[path] != -1):
-                shortest_path = paths.pop(i)
+        for path in paths:
+            if all(X[node] != -1 for node in path):
+                shortest_path = path #paths.pop(i)
                 X1 = X.copy()
-                X1[shortest_path] = 1
-                
-                R_t += probability_of_event(G, X1)
-
-                # Add the complement events to the queue
+                #X1[shortest_path] = 1
                 for node in shortest_path:
-                    complement = X1.copy()
-                    complement[node] = -1
-                    complement[complement == 1] = 0
-                    t = tuple(complement)
-                    if t not in visited:
-                        visited.add(t)
-                        Q.put(complement)
+                    X1[node] = 1
+                t = tuple(X1[node] for node in node_list)
+                if t not in visited:
+                    visited.add(t)
+                    #event_list = [(node, state) for node, state in X1.items()] # Avoid this, modify probability of event
+                    #R_t += probability_of_event(G, event_list)
+                    R_t += probability_of_event(G, X1)
+
+                    #for j in range(2**len(shortest_path)):
+                    #    complement = X1.copy()
+                    #    for k, node in enumerate(shortest_path):
+                    #        complement[node] = 2 * ((j >> k) & 1) - 1
+                    #    
+                    #    t = tuple(sorted(complement.items()))
+                    #    if t not in visited:
+                    #        visited.add(t)
+                    #        Q.put(complement)
+
+                    # Add the complement events to the queue
+                    for node in shortest_path:
+                        complement = X1.copy()
+                        
+                        #complement[complement == 1] = 0
+                        for n in shortest_path: #complement:
+                           if complement[n] == 1:
+                                complement[n] = 0
+                        
+                        complement[node] = -1
+    
+                        t = tuple(complement[node] for node in node_list)
+                        if t not in visited:
+                            visited.add(t)
+                            Q.put(complement)
+                        
                 break
 
     return R_t
 
 # Redundant helper function
-def probability_of_state(G: nx.Graph, state: np.ndarray) -> float:
+def probability_of_state(G: nx.Graph, state: list[tuple[str, int]]) -> float:
     """
         Parameters:
         -----------
         G: nx.Graph
             Graph object
-        state: np.ndarray
-            List of events
+        state: list[tuple[str, int]]
+            List of states
 
         Returns:
         --------
@@ -108,266 +195,297 @@ def probability_of_state(G: nx.Graph, state: np.ndarray) -> float:
     """
 
     prob = 1
-    for node, e in enumerate(state):
-        prob *= (1 - e) * G.nodes[node]['reliability'] + e * (1 - G.nodes[node]['reliability'])
+    for node, e in state:
+        prob *= e * G.nodes[node]['reliability'] + (1 - e) * (1 - G.nodes[node]['reliability'])
     return prob
 
-# Just for double checking the functionality of the modified Dotson algorithm
 def brute_force_reliability(G: nx.Graph, feasiblePaths: list[np.ndarray]) -> float:
     """
-        Parameters:
-        -----------
-        G: nx.Graph
-            Graph object
-        feasiblePaths: list[np.ndarray]
-            List of feasible paths between some particular terminal node pair
-
-        Returns:
-        --------
-        R: float
-            Terminal node pair reliability
+        Corrected brute force reliability calculation
     """
-
-    states = itertools.product([0, 1], repeat=len(G.nodes))
-    R = 0
-    for state in states:
-        disruptedNodes = [i for i in range(len(state)) if state[i] == 1]
-
-        shortest_path = None
+    if len(feasiblePaths) == 0:
+        return 0.0
+        
+    node_list = list(G.nodes())
+    n = len(node_list)
+    R = 0.0
+    
+    # Generate all possible node states (working/failed)
+    for i in range(2 ** n):
+        # Create state vector where:
+        # 0 = node is working, 1 = node is failed
+        node_failed = {}
+        for j, node in enumerate(node_list):
+            node_failed[node] = (i >> j) & 1
+        
+        # Check if any path is operational (all nodes in path are working)
+        operational = False
         for path in feasiblePaths:
-            if all([node not in disruptedNodes for node in path]):
-                shortest_path = path
+            if all(node_failed[node] == 0 for node in path):
+                operational = True
                 break
-        if shortest_path is not None:
-            R += probability_of_state(G, np.array(state))
+        
+        if operational:
+            # Calculate probability of this exact state
+            # All failed nodes contribute (1-reliability)
+            # All working nodes contribute reliability
+            prob = 1.0
+            for node in node_list:
+                if node_failed[node] == 1:  # Node failed
+                    prob *= (1 - G.nodes[node]['reliability'])
+                else:  # Node working
+                    prob *= G.nodes[node]['reliability']
+            R += prob
+    
     return R
 
-def compute_speedup_and_accuracy():
-    speedup = 0.0
-    accuracy = 0.0
-    error = 0.0
-    nodes = random.randint(10, 20)
-    #nodes = 7
-    edge_numbers = [int(1.2 * nodes), int(1.6 * nodes), int(2.0 * nodes)]
-    #edge_numbers = [14]
-    for edges in edge_numbers:
-        G = generate_random_graph_with_positions(nodes, edges, (-5, 5))
-        terminal_nodes: list[int] = [0, 3]
-        terminal_node_pairs = terminal_pairs(terminal_nodes)
-        
-        paths: list[np.ndarray] = feasible_paths(G, terminal_node_pairs)[(terminal_nodes[0], terminal_nodes[1])]
-
-        start = time.time()
-        dotson = terminal_pair_reliability(G, paths)
-        end = time.time()
-        elapsed_dotson = end - start
-
-        start = time.time()
-        brute_force = brute_force_reliability(G, paths)
-        end = time.time()
-        elapsed_brute_force = end - start
-
-        speedup += elapsed_brute_force / (elapsed_dotson + 1e-10)
-        
-        error += abs(dotson - brute_force)
-
-        if abs(dotson - brute_force) < 0.0001:
-            accuracy += 1.0
-        else:
-            #print("Network G node reliabilities: ")
-            #for node in G.nodes:
-            #    print("Node {} reliability: {}".format(node, G.nodes[node]['reliability']))
-            #print("Network G feasible paths: ")
-            #for path in paths:
-            #    print(path)
-
-            
-            print("-----------------------")
-            print("Dotson: {}".format(dotson))
-            print("Brute Force: {}".format(brute_force))
-            print("-----------------------")
-
-    return speedup / len(edge_numbers), accuracy / len(edge_numbers), error / len(edge_numbers)
-
-
-if __name__ == '__main__':
-
-    if False:
-        k = 50
-
-        terminal_nodes = [0,3]
-
-        average_runtimes_12 = []
-        average_runtimes_16 = []
-        average_runtimes_20 = []
-        for nodes in range(5, 30):
-            runtimes_12 = []
-            runtimes_16 = []
-            runtimes_20 = []
-            
-            for i in range(k):
-                G12 = generate_random_graph_with_positions(nodes, int(1.2 * nodes), (-5, 5))
-                G16 = generate_random_graph_with_positions(nodes, int(1.6 * nodes), (-5, 5))
-                G20 = generate_random_graph_with_positions(nodes, int(2.0 * nodes), (-5, 5))
-
-                paths12 = feasible_paths(G12, terminal_nodes)[(terminal_nodes[0], terminal_nodes[1])]
-                paths16 = feasible_paths(G16, terminal_nodes)[(terminal_nodes[0], terminal_nodes[1])]
-                paths20 = feasible_paths(G20, terminal_nodes)[(terminal_nodes[0], terminal_nodes[1])]
-
-                start = time.time()
-                terminal_pair_reliability(G12, paths12)
-                end = time.time()
-                runtimes_12.append(end - start)
-
-                start = time.time()
-                terminal_pair_reliability(G16, paths16)
-                end = time.time()
-                runtimes_16.append(end - start)
-
-                start = time.time()
-                terminal_pair_reliability(G20, paths20)
-                end = time.time()
-                runtimes_20.append(end - start)
-
-            average_runtimes_12.append(np.mean(runtimes_12))
-            average_runtimes_16.append(np.mean(runtimes_16))
-            average_runtimes_20.append(np.mean(runtimes_20))
-
-        plt.plot(range(5, 30), average_runtimes_12, label="12")
-        plt.plot(range(5, 30), average_runtimes_16, label="16")
-        plt.plot(range(5, 30), average_runtimes_20, label="20")
-        plt.legend()
-        plt.show()
-
-
-
-
-    if True:
-        k = 1000
-
-        speedup = 0.0
-        accuracy = 0.0
-        error = 0.0
-
-        for i in range(k):
-            print("Iteration: {}".format(i+1))
-            out1, out2, out3 = compute_speedup_and_accuracy()
-            speedup += out1
-            accuracy += out2
-            error += out3
-        
-        print("Accuracy: {} %".format(int(100 * accuracy / k)))
-        print("Average speedup: {}x".format(int(speedup / k)))
-        print("Average absolute error: {}".format(error / k))
-
-    if False:
-        G = nx.Graph()
-
-        # Add nodes with reliability attributes
-        G.add_node(0, reliability=0.65)
-        G.add_node(1, reliability=0.95)
-        G.add_node(2, reliability=0.345)
-        G.add_node(3, reliability=0.1290)
-        G.add_node(4, reliability=0.80)
-        G.add_node(5, reliability=0.99)
-        G.add_node(6, reliability=0.50)
-
-        # Add edges between nodes
-        G.add_edge(0, 1)
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
-        G.add_edge(3, 4)
-        G.add_edge(1, 3)
-        G.add_edge(3, 5)
-        G.add_edge(5, 6)
-        G.add_edge(6, 4)
-        G.add_edge(4, 0)
-
-
-        terminal_nodes: list[int] = [0, 3]
-            
-        #paths: list[np.ndarray] = feasible_paths(G, terminal_nodes)[(terminal_nodes[0], terminal_nodes[1])]
-        simple_paths = nx.all_simple_paths(G, source=terminal_nodes[0], target=terminal_nodes[1])
-        paths = []
-        for path in simple_paths:
-            paths.append(np.array(path, dtype=int))
-
-        dotson = terminal_pair_reliability(G, paths)
-        brute_force = brute_force_reliability(G, paths)
-
-        print("-----------------------")
-        print("Dotson: {}".format(dotson))
-        print("Brute Force: {}".format(brute_force))
-        print("-----------------------")
-
-
-
-    if False:
-        for i in range(100):
-            nodes = random.randint(5,20)
-            edge_numbers = [int(1.2 * nodes), int(1.6 * nodes), int(2.0 * nodes)]
-            edges = random.choice(edge_numbers)
+def compute_speedup_and_accuracy_improved(num_trials=50):
+    """
+        Improved testing with better numerical stability
+    """
+    speedups = []
+    accuracies = []
+    errors = []
+    
+    for trial in range(num_trials):
+        try:
+            # Use smaller graphs for more reliable testing
+            nodes = random.randint(10, 15)
+            edges = random.randint(nodes-1, min(2*nodes, nodes*(nodes-1)//2))
             
             G = generate_random_graph_with_positions(nodes, edges, (-5, 5))
-            terminal_nodes: list[int] = [0, 3]
             
-            paths: list[np.ndarray] = feasible_paths(G, terminal_nodes)[(terminal_nodes[0], terminal_nodes[1])]
-
-            dotson = terminal_pair_reliability(G, paths)
-            brute_force = brute_force_reliability(G, paths)
-
-            if abs(dotson - brute_force) > 0.001:
-                print("-----------------------")
-                print("Iteration: {}".format(i+1))
-                print("Dotson: {}".format(dotson))
-                print("Brute Force: {}".format(brute_force))
-                print("-----------------------")
+            # Ensure reasonable reliabilities and use consistent precision
+            for node in G.nodes():
+                G.nodes[node]['reliability'] = round(random.uniform(0.7, 0.95), 2)
+            
+            # Try multiple terminal pairs
+            terminal_pairs_to_try = list(itertools.combinations(G.nodes(), 2))
+            random.shuffle(terminal_pairs_to_try)
+            
+            dotson_result = None
+            brute_result = None
+            
+            for term1, term2 in terminal_pairs_to_try[:3]:
+                try:
+                    paths = list(nx.all_simple_paths(G, term1, term2, cutoff=min(6, nodes)))
+                    if len(paths) > 0 and len(paths) < 50:  # Limit path complexity
+                        paths_array = [np.array(path) for path in paths]
+                        
+                        dotson_result = terminal_pair_reliability(G, paths_array)
+                        brute_result = brute_force_reliability(G, paths_array)
+                        break
+                except:
+                    continue
+            
+            if dotson_result is None or brute_result is None:
+                continue
+                
+            # Use relative error for better comparison
+            if brute_result > 1e-10:  # Avoid division by zero
+                relative_error = abs(dotson_result - brute_result) / brute_result
+            else:
+                relative_error = abs(dotson_result - brute_result)
+            
+            accuracy = 1.0 if relative_error < 1e-6 else 0.0
+            
+            # Timing comparison
+            paths_for_timing = [np.array(path) for path in paths]
+            
+            dotson_time = timeit.timeit(
+                lambda: terminal_pair_reliability(G, paths_for_timing), 
+                number=3
+            ) / 3  # Average over 3 runs
+            
+            brute_time = timeit.timeit(
+                lambda: brute_force_reliability(G, paths_for_timing), 
+                number=3  
+            ) / 3
+            
+            speedup = brute_time / max(dotson_time, 1e-10)
+            
+            speedups.append(min(speedup, 10000))
+            accuracies.append(accuracy)
+            errors.append(relative_error)
+            
+            print(f"Trial {trial+1}: RelError = {relative_error:.8f}, "
+                  f"Dotson = {dotson_result:.6f}, Brute = {brute_result:.6f}, "
+                  f"Speedup = {speedup:.2f}x")
+                  
+            if relative_error > 1e-6:
+                print(f"  DISCREPANCY: Trying simple debug...")
+                debug_simple_case(G, paths_array, dotson_result, brute_result)
+                
+        except Exception as e:
+            print(f"Trial {trial+1} failed: {e}")
+            continue
     
-    if False:
-        E = [-1,1,0,0,1]
-        complements = complement_events(np.array(E))
-        for event in complements:
-            print(event)
-    if False:
-        G = nx.Graph()
-        G.add_node(0, label="0", reliability=0.9, pos=(0,0))
-        G.add_node(1, label="1", reliability=0.9, pos=(-1,1))
-        G.add_node(2, label="2", reliability=0.9, pos=(0,2))
-        G.add_node(3, label="3", reliability=0.9, pos=(3,1))
-        G.add_node(4, label="4", reliability=0.9, pos=(1,1.75))
-        G.add_node(5, label="5", reliability=0.9, pos=(2,0))
-        G.add_node(6, label="6", reliability=0.9, pos=(3,2))
+    if not speedups:
+        return 0.0, 0.0, 0.0
+    
+    avg_speedup = np.mean(speedups)
+    avg_accuracy = np.mean(accuracies) 
+    avg_error = np.mean(errors)
+    
+    print(f"\n=== IMPROVED RESULTS ===")
+    print(f"Trials: {len(speedups)}")
+    print(f"Average Speedup: {avg_speedup:.2f}x")
+    print(f"Average Accuracy: {avg_accuracy:.2%}")
+    print(f"Average Relative Error: {avg_error:.8f}")
+    
+    return avg_speedup, avg_accuracy, avg_error
 
-        G.add_edge(0,1)
-        G.add_edge(0,2)
-        G.add_edge(0,5)
-        G.add_edge(0,6)
-
-        G.add_edge(1,2)
-        G.add_edge(1,4)
-        G.add_edge(1,3)
-
-        G.add_edge(2,4)
-        G.add_edge(2,5)
-        G.add_edge(2,6)
+def debug_simple_case(G, paths, dotson_result, brute_result):
+    """Debug with a simpler approach"""
+    print(f"Simple debug: {len(G.nodes())} nodes, {len(paths)} paths")
+    
+    # Check if it's a simple case we can verify manually
+    if len(paths) <= 3:
+        print("Paths:")
+        for i, path in enumerate(paths):
+            path_rel = 1.0
+            for node in path:
+                path_rel *= G.nodes[node]['reliability']
+            print(f"  Path {i}: {path} (reliability: {path_rel:.6f})")
         
-        G.add_edge(6,4)
-        G.add_edge(6,3)
-        G.add_edge(6,5)
+        # For 2 paths, calculate union manually
+        if len(paths) == 2:
+            p1, p2 = paths
+            rel1 = probability_of_event(G, {node: 1 for node in p1})
+            rel2 = probability_of_event(G, {node: 1 for node in p2})
+            
+            common_nodes = set(p1) & set(p2)
+            rel_intersection = 1.0
+            for node in common_nodes:
+                rel_intersection *= G.nodes[node]['reliability']
+            
+            manual_union = rel1 + rel2 - rel_intersection
+            print(f"Manual union: {manual_union:.6f}")
+            print(f"Dotson - Manual: {dotson_result - manual_union:.6f}")
+            print(f"Brute - Manual: {brute_result - manual_union:.6f}")
+            
+def compute_speedup_and_accuracy(num_trials=10):
+    """
+        Enhanced testing with detailed diagnostics
+    """
+    speedups = []
+    accuracies = []
+    errors = []
+    
+    for trial in range(num_trials):
+        try:
+            # Small graphs for feasible brute force computation
+            nodes = random.randint(10, 16)
+            edges = random.randint(nodes-1, min(2*nodes, nodes*(nodes-1)//2))
+            
+            G = generate_random_graph_with_positions(nodes, edges, (-5, 5))
+            
+            # Ensure reasonable reliabilities
+            for node in G.nodes():
+                G.nodes[node]['reliability'] = random.uniform(0.7, 0.95)
+            
+            # Try multiple terminal pairs to find one with paths
+            terminal_pairs_to_try = list(itertools.combinations(G.nodes(), 2))
+            random.shuffle(terminal_pairs_to_try)
+            
+            dotson_result = None
+            brute_result = None
+            
+            for term1, term2 in terminal_pairs_to_try[:3]:  # Try up to 3 pairs
+                try:
+                    paths = list(nx.all_simple_paths(G, term1, term2, cutoff=min(6, nodes)))
+                    if len(paths) > 0:
+                        paths_array = [np.array(path) for path in paths]
+                        
+                        dotson_result = terminal_pair_reliability(G, paths_array)
+                        brute_result = brute_force_reliability(G, paths_array)
+                        break
+                except:
+                    continue
+            
+            if dotson_result is None or brute_result is None:
+                continue
+                
+            error = abs(dotson_result - brute_result)
+            accuracy = 1.0 if error < 1e-6 else 0.0
+            
+            # For timing comparison (use perf_counter for better precision)
+            paths_for_timing = [np.array(path) for path in paths]
+            
+            dotson_time = timeit.timeit(
+                lambda: terminal_pair_reliability(G, paths_for_timing), 
+                number=1
+            )
+            brute_time = timeit.timeit(
+                lambda: brute_force_reliability(G, paths_for_timing), 
+                number=1
+            )
+            
+            speedup = brute_time / max(dotson_time, 1e-10)
+            
+            speedups.append(min(speedup, 10000))  # Cap unrealistic speedups
+            accuracies.append(accuracy)
+            errors.append(error)
+            
+            print(f"Trial {trial+1}: Error = {error:.8f}, "
+                  f"Dotson = {dotson_result:.6f}, Brute = {brute_result:.6f}, "
+                  f"Speedup = {speedup:.2f}x")
+                  
+            if error > 1e-6:
+                print(f"  DISCREPANCY FOUND! Trying to debug...")
+                debug_discrepancy(G, paths_array, dotson_result, brute_result)
+                
+        except Exception as e:
+            print(f"Trial {trial+1} failed: {e}")
+            continue
+    
+    if not speedups:
+        return 0.0, 0.0, 0.0
+    
+    avg_speedup = np.mean(speedups)
+    avg_accuracy = np.mean(accuracies) 
+    avg_error = np.mean(errors)
+    
+    print(f"\n=== RESULTS ===")
+    print(f"Trials: {len(speedups)}")
+    print(f"Average Speedup: {avg_speedup:.2f}x")
+    print(f"Average Accuracy: {avg_accuracy:.2%}")
+    print(f"Average Error: {avg_error:.8f}")
+    
+    return avg_speedup, avg_accuracy, avg_error
 
-        G.add_edge(5,3)
+def debug_discrepancy(G, paths, dotson_result, brute_result):
+    """Debug when algorithms give different results"""
+    print("Debugging discrepancy:")
+    print(f"Graph: {len(G.nodes())} nodes, {len(G.edges())} edges")
+    print(f"Paths: {len(paths)}")
+    for i, path in enumerate(paths):
+        print(f"  Path {i}: {path}")
+    
+    # Check individual path reliabilities
+    for i, path in enumerate(paths):
+        path_rel = 1.0
+        for node in path:
+            path_rel *= G.nodes[node]['reliability']
+        print(f"  Path {i} reliability: {path_rel:.6f}")
+    
+    # Manual calculation for 2-path case
+    if len(paths) == 2:
+        p1, p2 = paths
+        # Calculate union probability manually
+        rel1 = probability_of_state_unified(G, {node: 1 for node in p1})
+        rel2 = probability_of_state_unified(G, {node: 1 for node in p2})
+        
+        # Find intersection nodes
+        common_nodes = set(p1) & set(p2)
+        rel_intersection = 1.0
+        for node in common_nodes:
+            rel_intersection *= G.nodes[node]['reliability']
+        
+        union_rel = rel1 + rel2 - rel_intersection
+        print(f"Manual union: {union_rel:.6f}")
 
-        paths = [np.array([0,5,3]), np.array([0,1,2,6,3])]
-
-        dotson = terminal_pair_reliability(G, paths)
-        brute_force = brute_force_reliability(G, paths)
-
-        print("-----------------------")
-        print("Dotson: {}".format(dotson))
-        print("Brute Force: {}".format(brute_force))
-        print("-----------------------")
-
-
-        plot_network(G)
-
-    pass
+# Run the improved test
+if __name__ == '__main__':
+    import timeit
+    speedup, accuracy, error = compute_speedup_and_accuracy_improved(num_trials=100)

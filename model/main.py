@@ -6,7 +6,7 @@ import random
 from information_set import compute_extreme_points
 from portfolio import generate_feasible_portfolios
 from subnetwork import cost_efficient_portfolios
-from path import terminal_pairs, feasible_paths
+from model.path import terminal_pairs, feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions
 
 
@@ -20,7 +20,7 @@ def main() -> None:
     for node in terminal_nodes:
         reliabilities[node] = 1.0
     
-    G: nx.Graph = construct_graph(filename, reliabilities)
+    G, G_original = construct_graph(filename, reliabilities)
 
     for node in terminal_nodes:
         G.nodes[node]['reliability'] = 1
@@ -29,14 +29,14 @@ def main() -> None:
     
     travel_volumes = {pair: 100 for pair in terminal_node_pairs}
 
-    paths = feasible_paths(G, terminal_node_pairs)
+    paths = feasible_paths(G, G_original, terminal_node_pairs)
 
     r = 32
     node_reinforcements = [(i, 0.995) for i in range(r)]
     costs = {i: [1] for i in range(r)}
     budget = [10]
 
-    print("Feasible portfolios")
+    print("Computing the feasible portfolios")
 
     start = time.time()
     Q_F, feasible_portfolio_costs = generate_feasible_portfolios(r, costs, budget)
@@ -45,7 +45,6 @@ def main() -> None:
     
 
     print("-----------------------------------------")
-    print("New version with binary representation")
     start = time.time()
     Q_CE, portfolio_costs = cost_efficient_portfolios(G, paths, node_reinforcements, Q_F, feasible_portfolio_costs, travel_volumes, False)
     end = time.time()
