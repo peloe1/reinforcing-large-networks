@@ -5,7 +5,7 @@ from reliability import terminal_pair_reliability
 
 # Old deprecated function
 def utility_functions(G: nx.Graph,
-                      paths: dict[tuple[int, int], list[np.ndarray]]
+                      paths: dict[tuple[int, int], list[list[str]]]
                      ) -> list[float]:
     """
         Parameters: 
@@ -29,7 +29,7 @@ def utility_functions(G: nx.Graph,
     return u_t
 
 def expected_travel(G: nx.Graph,
-                    all_paths: dict[tuple[str, str], list[np.ndarray]],
+                    all_paths: dict[tuple[str, str], list[list[str]]],
                     travel_volumes: dict[tuple[str, str], float]
                     ) -> float:
     """

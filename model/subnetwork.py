@@ -13,12 +13,12 @@ def bitmask_to_portfolio(mask: int, r: int) -> list[int]:
 
 # TODO: Make this work for general node reinforcement indices, not just 0, 1, ..., r
 def cost_efficient_portfolios(G: nx.Graph, 
-                              paths: dict[tuple[int, int], list[np.ndarray]], 
-                              node_reinforcements: list[tuple[int, float]], 
+                              paths: dict[tuple[str, str], list[list[str]]], 
+                              node_reinforcements: list[tuple[str, float]], 
                               Q_F: set[int], 
                               portfolio_costs: dict[int, list[float]], 
-                              travel_volumes: dict[tuple[int, int], float],
-                              verbose=False) -> tuple[set[int], dict[int, list[float]]]:
+                              travel_volumes: dict[tuple[str, str], float],
+                              verbose=False) -> tuple[set[int], dict[int, float]]:
     """
     Parameters:
         G (networkx.Graph): The graph in its original state with no portfolios applied and no disruptions.
@@ -31,10 +31,12 @@ def cost_efficient_portfolios(G: nx.Graph,
     """
     
     r = len(node_reinforcements)
-    Q: set[int] = set([0])
-
+    Q: set[int] = set()
+    
+    # Trivially cost-efficient portfolio
     performance: float = expected_travel(G, paths, travel_volumes)
-    performances: dict[int, list[float]] = {0: performance}
+    performances: dict[int, float] = {0: performance}
+    Q.add(0)
 
     for l in range(r):
         start = time.time()

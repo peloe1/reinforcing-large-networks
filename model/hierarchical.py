@@ -1,62 +1,67 @@
 import networkx as nx
-import numpy as np
 from model.path import feasible_paths
-from portfolio import generate_feasible_portfolios, dominates_with_cost, dominates
+from portfolio import generate_feasible_portfolios
 from subnetwork import cost_efficient_portfolios
-import itertools
 from performance import expected_travel
 
 
 # TODO: Double check that this works and optimize it
-def decomposition_solver(G: list[nx.Graph],
-                         T: list[tuple[int, int]],
+def cost_efficient_combined_portfolios(G: nx.Graph,
+                         G_original: nx.Graph,
+                         terminal_pairs: list[tuple[str, str]],
+                         travel_volumes: dict[tuple[str, str], float],
                          subnetworks: list[nx.Graph], 
-                         terminal_pair_sets: list[list[tuple[int, int]]], 
-                         travel_volumes: dict[tuple[int, int], float],
-                         reinforcement_actions: list[list[tuple[int, float]]],
-                         budget: list[float]) -> set[list[int]]:
+                         subnetworks_original: list[nx.Graph],
+                         subnetwork_terminal_pairs: list[list[tuple[str, str]]],
+                         subnetwork_travel_volumes: list[dict[tuple[str, str], float]],
+                         reinforcement_actions: list[list[tuple[str, float, list[float]]]],
+                         budget: list[float]) -> tuple[set[tuple[int, ...]], 
+                                                       dict[tuple[int, ...], float], 
+                                                       dict[tuple[int, ...], list[float]]
+                                                       ]:
     r = len(budget)
     k = len(subnetworks)
 
-    all_paths = feasible_paths(G, T)
+    all_paths: list[dict[tuple[str, str], list[list[str]]]] = [feasible_paths(subnetworks[j], subnetworks_original[j], subnetwork_terminal_pairs[j]) for j in range(k)]
 
     Q_CE = []
-    portfolio_costs = []
-    #portfolio_performances = []
+    portfolio_costs: list[dict[int, list[float]]] = []
 
-    for graph, terminal_pairs, actions in zip(subnetworks, terminal_pair_sets, reinforcement_actions):
+    for graph, actions, paths, volumes in zip(subnetworks, reinforcement_actions, all_paths, subnetwork_travel_volumes):
         N = len(actions)
-        action_costs: list[float] = []
-        node_reinforcements: list[tuple[int, float]] = []
-        for node, cost, prob in actions:
-            action_costs.append(cost)
+        action_costs: dict[str, list[float]] = {}
+        node_reinforcements: list[tuple[str, float]] = []
+        for node, prob, cost_vector in actions:
+            action_costs[node] = cost_vector
             node_reinforcements.append((node, prob))
 
         # Step 1
         feasible_portfolios, costs = generate_feasible_portfolios(N, action_costs, budget)
-        paths = feasible_paths(graph, terminal_pairs)
 
         # Step 2
-        Q_CE_j, _ = cost_efficient_portfolios(graph, paths, node_reinforcements, feasible_portfolios, costs)
+        Q_CE_j, _ = cost_efficient_portfolios(graph, paths, node_reinforcements, feasible_portfolios, costs, volumes)
         Q_CE.append(Q_CE_j)
         portfolio_costs.append(costs)
     
     # Step 3
-    Q_star = set()
-    combined_performances = {}
-    combined_costs = {}
+    Q_star: set[tuple[int, ...]] = set()
+    combined_performances: dict[tuple[int, ...], float] = {}
+    combined_costs: dict[tuple[int, ...], list[float]] = {}
 
+    path_list = feasible_paths(G, G_original, terminal_pairs)
+
+    j = 0
     for Q in Q_CE[0]:
         G_Q = G.copy()
         Q = [Q] + [0 for _ in range(2, k)]
         # This for loops applies portfolio 'Q' to 'G_Q'
         # the kth reinforcement action increases the reliability of 'node' to 'prob'
-        for i, (node, prob) in enumerate(reinforcement_actions[j]):
+        for i, (node, prob, _) in enumerate(reinforcement_actions[j]):
             if (Q[0] >> i) & 1: # True if the ith bit of the portfolio corresponding to the 0th subnetwork is one
                 G_Q.nodes[node]['reliability'] = prob
         
-        Q_star.add(Q)
-        combined_performances[tuple(Q)] = expected_travel(G_Q, all_paths, travel_volumes)
+        Q_star.add(tuple(Q))
+        combined_performances[tuple(Q)] = expected_travel(G_Q, path_list, travel_volumes)
         combined_costs[tuple(Q)] = portfolio_costs[Q[0]]
 
     # Step 4 for loop
@@ -69,7 +74,7 @@ def decomposition_solver(G: list[nx.Graph],
             for q_j in Q_CE[j]: # Q_CE[j] = Q^j_CE
                 cost_vector = [portfolio_costs[j][q_j][i] + combined_costs[tuple(Q)][i] for i in range(r)]
                 if all(cost_vector[i] <= budget[i] for i in range(r)):
-                    Q_copy = Q.copy()
+                    Q_copy = list(Q).copy()
                     Q_copy[j] = q_j
                     Q_j.add(Q_copy)
                     combined_costs[tuple(Q_copy)] = cost_vector
@@ -78,11 +83,11 @@ def decomposition_solver(G: list[nx.Graph],
                     G_Q = G.copy()
                     for i in range(j+1): # range(k) # looping all the way to k is redundant since we know that Q_copy[j+1], ... Q_copy[k-1] = 0
                         # Reinforcements to the ith subnetwork's nodes
-                        for m, (node, prob) in enumerate(reinforcement_actions[i]):
+                        for m, (node, prob, _) in enumerate(reinforcement_actions[i]):
                             if (Q_copy[i] >> m) & 1: # True if the mth bit of the portfolio corresponding to the ith subnetwork is one
                                 G_Q.nodes[node]['reliability'] = prob
                                 
-                    combined_performances[tuple(Q_copy)] = expected_travel(G_Q, all_paths, travel_volumes)
+                    combined_performances[tuple(Q_copy)] = expected_travel(G_Q, path_list, travel_volumes)
         # Step 7
         # dominates instead of dominates_with_cost
         dominated = set(filter(lambda Q1: any(combined_performances[tuple(Q2)] > combined_performances[tuple(Q1)] for Q2 in Q_star), Q_j))
@@ -102,11 +107,6 @@ def decomposition_solver(G: list[nx.Graph],
         Q_star.update(Q_j)
     # Step 9 and 10
     return Q_star, combined_performances, combined_costs
-
-
-
-                    
-            
 
 
 if __name__ == '__main__':

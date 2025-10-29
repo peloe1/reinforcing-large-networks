@@ -102,7 +102,7 @@ def portfolio_as_bitmask(portfolio: list[int]) -> int:
 # A new improved version, which hashes the portfolios (binary vectors) to integers (using the trivial choice for hash function) to speed up memory accesses and computations
 # q_i = 1 refers the the ith reinforcement action being selected in portfolio q, its corresponding node it is associated with is abstracted away here, but is 
 # accessible in nodeReinforcements variable in cost_efficient_portfolios function in ce_portfolios.py, the indexes of that list are the indexes i here.
-def generate_feasible_portfolios(noOfActions: int, costs: dict[int, list[float]], budget: list[float]) -> tuple[set[int], dict[int, list[float]]]:
+def generate_feasible_portfolios(noOfActions: int, costs: dict[str, list[float]], budget: list[float]) -> tuple[set[int], dict[int, list[float]]]:
     """
         Parameters:
             noOfActions (int): Number of possible reinforcement actions.
@@ -113,6 +113,9 @@ def generate_feasible_portfolios(noOfActions: int, costs: dict[int, list[float]]
             tuple[set[int], dict[int, float]]: The set of feasible portfolios as integers and their costs in a dictionary.
     """
     r = len(budget)
+
+    actions: dict[int, str] = {i: node for i, (node, _) in enumerate(costs.items())}
+
     feasible: set[int] = set()
     costsOfPortfolios: dict[int, list[float]] = {}
 
@@ -131,8 +134,9 @@ def generate_feasible_portfolios(noOfActions: int, costs: dict[int, list[float]]
             if not (q >> i) & 1: # True if the ith bit is zero
                 # Set the ith bit (which was zero) to one
                 q_copy = q | (1 << i)
-                
-                cost_vector = [sum(costs[i][j] * ((q_copy >> i) & 1) for i in range(noOfActions)) for j in range(r)]
+
+                action = actions[i]
+                cost_vector = [sum(costs[action][j] * ((q_copy >> i) & 1) for i in range(noOfActions)) for j in range(r)]
                 
                 #sum(costs[i] * ((q_copy >> i) & 1) for i in range(noOfActions))
                 if q_copy not in visited and all(cost_vector[j] <= budget[j] for j in range(r)):
@@ -146,7 +150,7 @@ def generate_feasible_portfolios(noOfActions: int, costs: dict[int, list[float]]
 
     return feasible, costsOfPortfolios
 
-def dominates_with_cost(e1: list[float], e2: list[float], c1: list[float], c2: list[float]) -> bool:
+def dominates_with_cost(e1: float, e2: float, c1: list[float], c2: list[float]) -> bool:
     """
     Parameters:
         e1 (list[float]): Utilities when portfolio q1 has been applied.
@@ -160,7 +164,7 @@ def dominates_with_cost(e1: list[float], e2: list[float], c1: list[float], c2: l
 
     return (e1 > e2 and all(c1[j] <= c2[j] for j in range(len(c1)))) or (e1 == e2 and all(c1[j] <= c2[j] for j in range(len(c1))) and any(c1[j] < c2[j] for j in range(len(c1))))
 
-def cost_efficient(e1: list[float], c1: list[float], feasiblePortfolios: list[tuple[list[float], float]]) -> bool:
+def cost_efficient(e1: float, c1: list[float], feasiblePortfolios: list[tuple[float, list[float]]]) -> bool:
     """
     Parameters:
         e1 (list[float]): Utilities when portfolio q1 has been applied.

@@ -25,27 +25,29 @@ def terminal_pairs(terminal_nodes: list[str]) -> list[tuple[str, str]]:
     
     return pairs
 
-def simple_paths(G: nx.Graph, terminal_node_pairs: list[tuple[str, str]]) -> dict[tuple[str, str], list[np.ndarray]]:
+# Old deprecated function
+def simple_paths(G: nx.Graph, terminal_node_pairs: list[tuple[str, str]]) -> dict[tuple[str, str], list[list[str]]]:
     """
         Parameters:
         -----------
         G: nx.Graph
             Graph object
-        terminal_node_pairs: np.ndarray
+        terminal_node_pairs: list[tuple[str, str]]
             A 1D NumPy array of terminal node pairs represented by tuples of the form (u, v).
 
         Returns:
         --------
-        paths: np.ndarray
+        paths: dict[tuple[str, str], list[np.ndarray]]
             A 2D NumPy array of simple paths between terminal node pairs.
     """
 
-    paths: dict[tuple[str, str], list[np.ndarray]] = {}
+    paths: dict[tuple[str, str], list[list[str]]] = {}
     for u, v in terminal_node_pairs:
         paths[(u, v)] = list(nx.all_simple_paths(G, source=u, target=v))
 
     return paths
 
+# Old deprecated function
 # TODO: This computes the turn angle based on the angle between the primary switches, 
 # not based on the actual track geometry, perhaps store the angle in the node attributes when compiling the graph?
 def filter_paths(G: nx.Graph, paths: list[np.ndarray]) -> list[np.ndarray]:
@@ -85,6 +87,7 @@ def filter_paths(G: nx.Graph, paths: list[np.ndarray]) -> list[np.ndarray]:
 
     return feasible_paths
 
+# Old deprecated function
 def old_feasible_paths(G: nx.Graph, terminal_node_pairs: list[tuple[str, str]]) -> dict[tuple[str, str], list[np.ndarray]]:
     """
         Parameters:
@@ -112,9 +115,10 @@ def old_feasible_paths(G: nx.Graph, terminal_node_pairs: list[tuple[str, str]]) 
 
     return path_dic
 
-def feasible_paths(G_original: nx.Graph, G_simplified: nx.Graph, 
-                  terminal_node_pairs: list[tuple[str, str]], 
-                  max_turn_angle: float = np.pi / 2) -> dict[tuple[str, str], list[np.ndarray]]:
+def feasible_paths(G_original: nx.Graph, 
+                   G_simplified: nx.Graph, 
+                   terminal_node_pairs: list[tuple[str, str]],
+                   max_turn_angle: float = np.pi / 2) -> dict[tuple[str, str], list[list[str]]]:
     """
     Find feasible paths using original graph geometry but return simplified paths.
     
@@ -142,21 +146,18 @@ def feasible_paths(G_original: nx.Graph, G_simplified: nx.Graph,
         feasible_paths_simplified = []
         
         for simplified_path in all_paths_simplified:
-            # Convert to numpy array for consistency
-            simplified_path_array = np.array(simplified_path, dtype=str)
-            
             # Reconstruct the detailed path in the original graph
-            detailed_path = reconstruct_detailed_path(G_original, simplified_path_array)
+            detailed_path = reconstruct_detailed_path(G_original, simplified_path)
             
             # Check if the detailed path has feasible turn angles
             if is_path_feasible(detailed_path, G_original, max_turn_angle):
-                feasible_paths_simplified.append(simplified_path_array)
+                feasible_paths_simplified.append(simplified_path)
         
         path_dic[(u, v)] = feasible_paths_simplified
     
     return path_dic
 
-def reconstruct_detailed_path(G_original: nx.Graph, simplified_path: np.ndarray) -> list[str]:
+def reconstruct_detailed_path(G_original: nx.Graph, simplified_path: list[str]) -> list[str]:
     """
     Reconstruct the detailed path including secondary nodes between primary nodes.
     
@@ -164,12 +165,12 @@ def reconstruct_detailed_path(G_original: nx.Graph, simplified_path: np.ndarray)
     -----------
     G_original: nx.Graph
         Original graph with secondary nodes
-    simplified_path: np.ndarray
+    simplified_path: list[str]
         Path containing only primary nodes
     
     Returns:
     --------
-    detailed_path: List[str]
+    detailed_path: list[str]
         Complete path including secondary nodes
     """
     detailed_path = []
@@ -223,9 +224,9 @@ def is_path_feasible(detailed_path: list[str], G: nx.Graph, max_turn_angle: floa
         u, v, w = detailed_path[i], detailed_path[i+1], detailed_path[i+2]
         
         # Get positions for the three consecutive nodes
-        pos_u = positions.get(u)
-        pos_v = positions.get(v)
-        pos_w = positions.get(w)
+        pos_u = positions[u]
+        pos_v = positions[v]
+        pos_w = positions[w]
         
         if None in (pos_u, pos_v, pos_w):
             continue
@@ -250,152 +251,6 @@ def is_path_feasible(detailed_path: list[str], G: nx.Graph, max_turn_angle: floa
             
     return True
 
-"""
-if __name__ == "__main__":
-    num_nodes = 10
-    num_edges = 20
-    pos_range = [0, 1]
-
-    G = nx.Graph()
-    
-    # Add the specified number of nodes with random positions
-    for i in range(num_nodes):
-        # Generate random positions within the given range
-        pos_x = random.uniform(pos_range[0], pos_range[1])
-        pos_y = random.uniform(pos_range[0], pos_range[1])
-        G.add_node(i, pos=(pos_x, pos_y), label=i, reliability=random.uniform(0, 1))
-    
-    possible_edges = [(i, j) for i in range(num_nodes) for j in range(i+1, num_nodes)]
-    
-    selected_edges = random.sample(possible_edges, min(num_edges, len(possible_edges)))
-    
-    # Add these edges to the graph
-    G.add_edges_from(selected_edges, weight=1, color='gray')
-
-    terminal_nodes = [0, 3]
-    terminal_node_pairs = terminal_pairs(terminal_nodes)
-
-    for (u, v), paths in feasible_paths(G, terminal_node_pairs).items():
-        print(type(paths[0]))
-"""
-# Three helper functions for validating correctness of the algorithms
-
-def analyze_turn_constraints(G_original: nx.Graph, G_simplified: nx.Graph, 
-                           terminal_node_pairs: list[tuple[str, str]]):
-    """
-    Analyze how the turn constraint affects path selection.
-    """
-    print("\n=== Turn Constraint Analysis ===")
-    
-    for u, v in terminal_node_pairs:
-        # Get all paths before filtering
-        all_paths = list(nx.all_simple_paths(G_simplified, u, v))
-        
-        # Get feasible paths after filtering
-        feasible_paths_list = feasible_paths(G_original, G_simplified, [(u, v)])[(u, v)]
-        
-        print(f"\nPair ({u}, {v}):")
-        print(f"  Total paths: {len(all_paths)}")
-        print(f"  Feasible paths: {len(feasible_paths_list)}")
-        print(f"  Filtered out: {len(all_paths) - len(feasible_paths_list)} paths")
-        
-        # Analyze why paths were filtered
-        if len(all_paths) > len(feasible_paths_list):
-            print("  Example of filtered path:")
-            for path in all_paths:
-                if list(path) not in [list(p) for p in feasible_paths_list]:
-                    detailed = reconstruct_detailed_path(G_original, path)
-                    if not is_path_feasible(detailed, G_original, np.pi/2):
-                        print(f"    Filtered path: {path}")
-                        # Find the problematic turn
-                        positions = {node: G_original.nodes[node]['pos'] for node in detailed}
-                        for i in range(len(detailed) - 2):
-                            u_det, v_det, w_det = detailed[i], detailed[i+1], detailed[i+2]
-                            pos_u, pos_v, pos_w = positions[u_det], positions[v_det], positions[w_det]
-                            
-                            vec1 = np.array([pos_v[0] - pos_u[0], pos_v[1] - pos_u[1]])
-                            vec2 = np.array([pos_w[0] - pos_v[0], pos_w[1] - pos_v[1]])
-                            
-                            dot_product = np.dot(vec1, vec2)
-                            norms = np.linalg.norm(vec1) * np.linalg.norm(vec2)
-                            
-                            if norms > 1e-10:
-                                cos_angle = np.clip(dot_product / norms, -1.0, 1.0)
-                                angle_rad = np.arccos(cos_angle)
-                                angle_deg = np.degrees(angle_rad)
-                                
-                                if angle_deg > 90:
-                                    print(f"      Sharp turn at {v_det}: {angle_deg:.1f}°")
-                                    break
-                        break
-
-
-def analyze_feasible_path_geometry(G_original: nx.Graph, feasible_paths_dict):
-    """Analyze why the feasible paths pass the turn constraint."""
-    print("\n=== Feasible Path Geometry Analysis ===")
-    
-    for (u, v), paths in feasible_paths_dict.items():
-        if paths:
-            print(f"\nPair ({u}, {v}): {len(paths)} feasible paths")
-            
-            for i, path in enumerate(paths[:2]):  # Analyze first 2 paths
-                print(f"\nPath {i+1}: {path}")
-                detailed = reconstruct_detailed_path(G_original, path)
-                
-                positions = {node: G_original.nodes[node]['pos'] for node in detailed}
-                max_turn = 0
-                turn_count = 0
-                
-                for j in range(len(detailed) - 2):
-                    u_det, v_det, w_det = detailed[j], detailed[j+1], detailed[j+2]
-                    pos_u, pos_v, pos_w = positions[u_det], positions[v_det], positions[w_det]
-                    
-                    vec1 = np.array([pos_v[0] - pos_u[0], pos_v[1] - pos_u[1]])
-                    vec2 = np.array([pos_w[0] - pos_v[0], pos_w[1] - pos_v[1]])
-                    
-                    dot_product = np.dot(vec1, vec2)
-                    norms = np.linalg.norm(vec1) * np.linalg.norm(vec2)
-                    
-                    if norms > 1e-10:
-                        cos_angle = np.clip(dot_product / norms, -1.0, 1.0)
-                        angle_rad = np.arccos(cos_angle)
-                        angle_deg = np.degrees(angle_rad)
-                        max_turn = max(max_turn, angle_deg)
-                        turn_count += 1
-                        
-                        if angle_deg > 80:  # Show turns close to the limit
-                            print(f"  Turn at {v_det}: {angle_deg:.1f}°")
-                
-                print(f"  Maximum turn: {max_turn:.1f}°, Total turns analyzed: {turn_count}")
-
-
-def check_simplification_quality(G_original: nx.Graph, G_simplified: nx.Graph):
-    """Check if the simplified graph preserves realistic connectivity."""
-    print("\n=== Simplification Quality Check ===")
-    
-    original_primary = [n for n, d in G_original.nodes(data=True) if d.get('type') == 'primary']
-    simplified_nodes = list(G_simplified.nodes())
-    
-    print(f"Original primary nodes: {len(original_primary)}")
-    print(f"Simplified graph nodes: {len(simplified_nodes)}")
-    print(f"Simplified graph edges: {len(G_simplified.edges())}")
-    
-    # Check average degree
-    original_avg_degree = sum(dict(G_original.degree()).values()) / len(G_original.nodes())
-    simplified_avg_degree = sum(dict(G_simplified.degree()).values()) / len(G_simplified.nodes())
-    
-    print(f"Original avg degree: {original_avg_degree:.2f}")
-    print(f"Simplified avg degree: {simplified_avg_degree:.2f}")
-    
-    # If simplified graph has much higher connectivity, we might be over-connecting
-    connectivity_ratio = simplified_avg_degree / original_avg_degree
-    print(f"Connectivity ratio: {connectivity_ratio:.2f}x")
-    
-    if connectivity_ratio > 3:
-        print("⚠️  High connectivity ratio - simplified graph may have unrealistic shortcuts")
-
-
-# Example usage
 if __name__ == '__main__':
     filename = 'data/network/sij.json'
     num_nodes = 40
