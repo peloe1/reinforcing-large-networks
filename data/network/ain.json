@@ -1,0 +1,1 @@
+{"id": "AIN", "nodes": [{"id": "AIN Puskin|V0719", "type": "primary", "x": 395602.37148910115, "y": 6703611.5742848925}, {"id": "JP V0719", "type": "primary", "x": 395610.4609801669, "y": 6703552.44784718}], "edges": [{"n0": "AIN Puskin|V0719", "n1": "JP V0719"}, {"n0": "JP V0719", "n1": "AIN Puskin|V0719"}]}

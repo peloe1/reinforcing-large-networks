@@ -1,0 +1,1 @@
+{"id": "SUL", "nodes": [{"id": "SUL Puskin|V0072", "type": "primary", "x": 642945.1194331201, "y": 6941593.362821313}, {"id": "JNS V0072", "type": "primary", "x": 642889.6821691347, "y": 6941648.5586836105}], "edges": [{"n0": "SUL Puskin|V0072", "n1": "JNS V0072"}, {"n0": "JNS V0072", "n1": "SUL Puskin|V0072"}]}

@@ -1,0 +1,1 @@
+{"id": "UKPH003", "nodes": [{"id": "UKPH003 Omistusraja|V0024", "type": "primary", "x": 195334.4083756184, "y": 6753355.639432433}, {"id": "UKP V0024", "type": "primary", "x": 195362.61376210907, "y": 6753353.602859466}], "edges": [{"n0": "UKPH003 Omistusraja|V0024", "n1": "UKP V0024"}, {"n0": "UKP V0024", "n1": "UKPH003 Omistusraja|V0024"}]}

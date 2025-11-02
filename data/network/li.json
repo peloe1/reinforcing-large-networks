@@ -1,0 +1,1 @@
+{"id": "LI", "nodes": [{"id": "LI Puskin|V0582", "type": "primary", "x": 388565.1047906399, "y": 7297439.080276359}, {"id": "KMI V0582", "type": "primary", "x": 388566.5714090739, "y": 7297366.615380581}], "edges": [{"n0": "LI Puskin|V0582", "n1": "KMI V0582"}, {"n0": "KMI V0582", "n1": "LI Puskin|V0582"}]}

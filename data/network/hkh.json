@@ -1,0 +1,1 @@
+{"id": "HKH", "nodes": [{"id": "TKL V0224", "type": "primary", "x": 392047.54865192814, "y": 6686170.8858525455}, {"id": "HKH Puskin|V0224", "type": "primary", "x": 392178.46262399445, "y": 6686674.05422174}], "edges": [{"n0": "HKH Puskin|V0224", "n1": "TKL V0224"}, {"n0": "TKL V0224", "n1": "HKH Puskin|V0224"}]}

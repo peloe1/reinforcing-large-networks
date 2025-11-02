@@ -93,6 +93,7 @@ def cost_efficient_combined_portfolios(G: nx.Graph,
         dominated = set(filter(lambda Q1: any(combined_performances[tuple(Q2)] > combined_performances[tuple(Q1)] for Q2 in Q_star), Q_j))
         Q_j = Q_j.difference(dominated)
 
+        # Step 8
         dominated_previous = set(filter(lambda Q1: any(combined_performances[tuple(Q2)] > combined_performances[tuple(Q1)] for Q2 in Q_j), Q_star))
         Q_star = Q_star.difference(dominated_previous)
 
@@ -103,9 +104,11 @@ def cost_efficient_combined_portfolios(G: nx.Graph,
 
         #dominated_previous = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[tuple(Q2)], combined_performances[tuple(Q1)], combined_costs[tuple(Q2)], combined_costs[tuple(Q1)]) for Q2 in Q_j), Q_star))
         #Q_star = Q_star.difference(dominated_previous)
-
+        
+        # Step 9
         Q_star.update(Q_j)
-    # Step 9 and 10
+        
+    # Step 11 and 12
     return Q_star, combined_performances, combined_costs
 
 
