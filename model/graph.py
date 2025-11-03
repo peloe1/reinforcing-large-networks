@@ -63,7 +63,6 @@ def generate_random_graph_with_positions(num_nodes, num_edges, pos_range=(0, 1))
     return G
 
 
-
 def read_from_json(filename: str) -> nx.Graph:
     """
         Parameters:
@@ -165,6 +164,41 @@ def construct_graph(filename: str) -> nx.Graph:
     
     return G, G_original
 
+def merge_graphs_from_json(file_list: list[str]) -> nx.Graph:
+    """
+        Parameters:
+        -----------
+        file_list: list[str]
+            List of JSON file paths to merge (networks must share common nodes)
+
+        Returns:
+        --------
+        G_merged: nx.Graph
+            Unified graph with merged nodes and edges
+    """
+
+    G_merged = nx.Graph()
+
+    for filename in file_list:
+        G_temp = read_from_json(filename)
+
+        # Merge nodes (preserving attributes)
+        for node, attrs in G_temp.nodes(data=True):
+            if not G_merged.has_node(node):
+                G_merged.add_node(node, **attrs)
+            else:
+                # Update missing attributes only, do not overwrite existing
+                for k, v in attrs.items():
+                    if k not in G_merged.nodes[node]:
+                        G_merged.nodes[node][k] = v
+
+        # Merge edges (preserving weight + other attributes if present)
+        for u, v, attrs in G_temp.edges(data=True):
+            if not G_merged.has_edge(u, v):
+                G_merged.add_edge(u, v, **attrs)
+
+    return G_merged
+
 def plot_network(G: nx.Graph):
     nodes = G.nodes(data=True)
     print(nodes)
@@ -211,8 +245,7 @@ def plot_network(G: nx.Graph):
 
 
 if __name__ == '__main__':
-    filename = 'data/network/sij.json'
-    num_nodes = 40
+    filename = 'data/network/@dippa_data.json'
 
     G, G_original = construct_graph(filename)
 
