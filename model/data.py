@@ -136,95 +136,97 @@ def main():
     # Configuration
     # Taipale, Lapinlahti, Alapitkä, Siilinjärvi, Sänkimäki, Kinahmi, Juankoski, Toivala, Sorsasalo, Kuopio
     TARGET_STATIONS = ["TE", "LNA", "APT", "SIJ", "SKM", "KNH", "JKI", "TOI", "SOR", "KUO"]
-    file_paths = []
-    output_paths = []
-    for i in range(1, 31+1):
-        if i < 10:
-            file_paths.append("data/raaka_data/2024-01/2024-01-0" + str(i) + "_trains.json")
-            output_paths.append("data/juna_data/2024-01/2024-01-0" + str(i) + "_trains.json")
-        else:
-            file_paths.append("data/raaka_data/2024-01/2024-01-" + str(i) + "_trains.json")
-            output_paths.append("data/juna_data/2024-01/2024-01-" + str(i) + "_trains.json")
+    monthIndexes = ["0" + str(i) for i in range(1, 10)] + ["10", "11", "12"]
+    for month in monthIndexes:
+        file_paths = []
+        output_paths = []
+        for i in range(1, 31+1):
+            if i < 10:
+                file_paths.append("data/raaka_data/2024-" + month + "/2024-" + month + "-0" + str(i) + "_trains.json")
+                output_paths.append("data/juna_data/2024-" + month + "/2024-" + month + "-0" + str(i) + "_trains.json")
+            else:
+                file_paths.append("data/raaka_data/2024-" + month + "/2024-" + month + "-" + str(i) + "_trains.json")
+                output_paths.append("data/juna_data/2024-" + month + "/2024-" + month + "-" + str(i) + "_trains.json")
 
-    for JSON_FILE_PATH, OUTPUT_FILE in zip(file_paths, output_paths):
-        try:
-            # 1. Load data from JSON file
-            print("Loading data from JSON file...")
-            trains_data = load_trains_from_json(JSON_FILE_PATH)
-            print(f"Loaded {len(trains_data)} trains from {JSON_FILE_PATH}")
-            
-            # 2. Filter trains for target stations
-            print(f"Filtering trains for stations: {TARGET_STATIONS}")
-            filtered_trains = filter_trains_by_stations(trains_data, TARGET_STATIONS)
-            print(f"Found {len(filtered_trains)} trains that pass through target stations")
-            
-            if not filtered_trains:
-                print("No trains found for the specified stations.")
-                return
-            
-            # 3. Create detailed analysis
-            print("Creating detailed analysis...")
-            analysis_df = create_detailed_analysis(filtered_trains, TARGET_STATIONS)
-            
-            # 4. Generate summary statistics
-            summary = generate_summary_statistics(analysis_df, filtered_trains)
-            
-            # 5. Display results
-            print("\n" + "="*50)
-            print("SUMMARY RESULTS")
-            print("="*50)
-            print(f"Total trains found: {summary['total_trains']}")
-            print(f"Total station events: {summary['total_events']}")
-            print(f"Unique stations visited: {summary['unique_stations_visited']}")
-            print(f"Trains that actually stop: {summary['stopping_trains']}")
-            print(f"Trains with commercial stops: {summary['commercial_stops']}")
-            
-            print("\nTrains by type:")
-            for train_type, count in summary['trains_by_type'].items():
-                print(f"  {train_type}: {count} trains")
-            
-            print("\nEvents by station:")
-            for station, count in summary['events_by_station'].items():
-                print(f"  {station}: {count} events")
-            
-            print("\nEvents by type:")
-            for event_type, count in summary['events_by_type'].items():
-                print(f"  {event_type}: {count} events")
-            
-            # 6. Show detailed data
-            print("\n" + "="*50)
-            print("DETAILED SCHEDULE AT TARGET STATIONS")
-            print("="*50)
-            
-            # Display first 20 rows of detailed data
-            display_columns = ['trainNumber', 'trainType', 'stationShortCode', 'eventType', 
-                            'scheduledTime', 'trainStopping', 'commercialStop', 'differenceInMinutes']
-            
-            pd.set_option('display.width', None)
-            pd.set_option('display.max_columns', None)
-            print(analysis_df[display_columns].sort_values(['trainNumber', 'scheduledTime']).head(20).to_string(index=False))
-            
-            # 7. Save filtered results
-            save_filtered_results(filtered_trains, OUTPUT_FILE)
-            print(f"\nFiltered results saved to: {OUTPUT_FILE}")
-            
-            # 8. Additional analysis: Show trains with most station visits
-            print("\n" + "="*50)
-            print("TRAINS WITH MOST STATION VISITS")
-            print("="*50)
-            station_visits = analysis_df.groupby('trainNumber').agg({
-                'stationShortCode': 'nunique',
-                'trainType': 'first'
-            }).sort_values('stationShortCode', ascending=False)
-            
-            print(station_visits.head(10).to_string())
-            
-        except FileNotFoundError:
-            print(f"Error: File {JSON_FILE_PATH} not found.")
-        except json.JSONDecodeError:
-            print(f"Error: Invalid JSON format in {JSON_FILE_PATH}.")
-        except Exception as e:
-            print(f"Error: {e}")
+        for JSON_FILE_PATH, OUTPUT_FILE in zip(file_paths, output_paths):
+            try:
+                # 1. Load data from JSON file
+                print("Loading data from JSON file...")
+                trains_data = load_trains_from_json(JSON_FILE_PATH)
+                print(f"Loaded {len(trains_data)} trains from {JSON_FILE_PATH}")
+                
+                # 2. Filter trains for target stations
+                print(f"Filtering trains for stations: {TARGET_STATIONS}")
+                filtered_trains = filter_trains_by_stations(trains_data, TARGET_STATIONS)
+                print(f"Found {len(filtered_trains)} trains that pass through target stations")
+                
+                if not filtered_trains:
+                    print("No trains found for the specified stations.")
+                    return
+                
+                # 3. Create detailed analysis
+                print("Creating detailed analysis...")
+                analysis_df = create_detailed_analysis(filtered_trains, TARGET_STATIONS)
+                
+                # 4. Generate summary statistics
+                summary = generate_summary_statistics(analysis_df, filtered_trains)
+                
+                # 5. Display results
+                print("\n" + "="*50)
+                print("SUMMARY RESULTS")
+                print("="*50)
+                print(f"Total trains found: {summary['total_trains']}")
+                print(f"Total station events: {summary['total_events']}")
+                print(f"Unique stations visited: {summary['unique_stations_visited']}")
+                print(f"Trains that actually stop: {summary['stopping_trains']}")
+                print(f"Trains with commercial stops: {summary['commercial_stops']}")
+                
+                print("\nTrains by type:")
+                for train_type, count in summary['trains_by_type'].items():
+                    print(f"  {train_type}: {count} trains")
+                
+                print("\nEvents by station:")
+                for station, count in summary['events_by_station'].items():
+                    print(f"  {station}: {count} events")
+                
+                print("\nEvents by type:")
+                for event_type, count in summary['events_by_type'].items():
+                    print(f"  {event_type}: {count} events")
+                
+                # 6. Show detailed data
+                print("\n" + "="*50)
+                print("DETAILED SCHEDULE AT TARGET STATIONS")
+                print("="*50)
+                
+                # Display first 20 rows of detailed data
+                display_columns = ['trainNumber', 'trainType', 'stationShortCode', 'eventType', 
+                                'scheduledTime', 'trainStopping', 'commercialStop', 'differenceInMinutes']
+                
+                pd.set_option('display.width', None)
+                pd.set_option('display.max_columns', None)
+                print(analysis_df[display_columns].sort_values(['trainNumber', 'scheduledTime']).head(20).to_string(index=False))
+                
+                # 7. Save filtered results
+                save_filtered_results(filtered_trains, OUTPUT_FILE)
+                print(f"\nFiltered results saved to: {OUTPUT_FILE}")
+                
+                # 8. Additional analysis: Show trains with most station visits
+                print("\n" + "="*50)
+                print("TRAINS WITH MOST STATION VISITS")
+                print("="*50)
+                station_visits = analysis_df.groupby('trainNumber').agg({
+                    'stationShortCode': 'nunique',
+                    'trainType': 'first'
+                }).sort_values('stationShortCode', ascending=False)
+                
+                print(station_visits.head(10).to_string())
+                
+            except FileNotFoundError:
+                print(f"Error: File {JSON_FILE_PATH} not found.")
+            except json.JSONDecodeError:
+                print(f"Error: Invalid JSON format in {JSON_FILE_PATH}.")
+            except Exception as e:
+                print(f"Error: {e}")
 
 # Alternative: Simple one-liner approach for quick analysis
 def quick_analysis(json_file_path: str, target_stations: List[str]):
