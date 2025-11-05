@@ -20,6 +20,19 @@ SUBNETWORK_STATIONS = {
     "LUI": "Luikonlahti"       # Eastern terminal
 }
 
+SUBNETWORK_TERMINAL_PAIRS = {
+    "KUO": [("KRM", "KUO"), ("KRM", "SOR"), ("KUO", "SOR")],
+    "SOR": [("KUO", "SOR"), ("KUO", "TOI"), ("SOR", "TOI")],
+    "TOI": [("TOI", "SOR"), ("TOI", "SIJ"), ("SOR", "SIJ")],
+    "SIJ": [("TOI", "SIJ"), ("TOI", "SKM"), ("TOI", "APT"), ("SIJ", "SKM"), ("SIJ", "APT")],
+    "APT": [("SIJ", "APT"), ("SIJ", "LNA"), ("APT", "LNA")],
+    "LNA": [("APT", "LNA"), ("APT", "TE"), ("LNA", "TE")],
+    "TE": [("LNA", "TE"), ("LNA", "OHM"), ("TE", "OHM")],
+    "SKM": [("SIJ", "SKM"), ("SIJ", "KNH"), ("SKM", "KNH")],
+    "KNH": [("SKM", "KNH"), ("SKM", "JKI"), ("KNH", "JKI")],
+    "JKI": [("KNH", "JKI"), ("KNH", "LUI"), ("JKI", "LUI")]
+}
+
 # Terminal nodes
 TERMINALS = {
     "south": "KRM",
@@ -32,36 +45,132 @@ TERMINALS = list(SUBNETWORK_STATIONS.keys())
 # All stations that should be tracked (subnetwork + terminals)
 ALL_TRACKED_STATIONS = set(SUBNETWORK_STATIONS.keys())
 
+def derive_subnetwork_volumes(path_frequencies):
+    """
+    Derive travel volumes for each subnetwork's terminal pairs based on which trains
+    actually pass through that subnetwork via specific entry/exit points.
+    Treats terminal pairs as unordered (A,B) == (B,A)
+    """
+    SUBNETWORK_TERMINAL_PAIRS = {
+        "KUO": [("KRM", "KUO"), ("KRM", "SOR"), ("KUO", "SOR")],
+        "SOR": [("KUO", "SOR"), ("KUO", "TOI"), ("SOR", "TOI")],
+        "TOI": [("TOI", "SOR"), ("TOI", "SIJ"), ("SOR", "SIJ")],
+        "SIJ": [("TOI", "SIJ"), ("TOI", "SKM"), ("TOI", "APT"), ("SIJ", "SKM"), ("SIJ", "APT")],
+        "APT": [("SIJ", "APT"), ("SIJ", "LNA"), ("APT", "LNA")],
+        "LNA": [("APT", "LNA"), ("APT", "TE"), ("LNA", "TE")],
+        "TE": [("LNA", "TE"), ("LNA", "OHM"), ("TE", "OHM")],
+        "SKM": [("SIJ", "SKM"), ("SIJ", "KNH"), ("SKM", "KNH")],
+        "KNH": [("SKM", "KNH"), ("SKM", "JKI"), ("KNH", "JKI")],
+        "JKI": [("KNH", "JKI"), ("KNH", "LUI"), ("JKI", "LUI")]
+    }
+    
+    SUBNETWORK_STATIONS = {
+        "KUO": ["KRM", "KUO", "SOR"],
+        "SOR": ["KUO", "SOR", "TOI"], 
+        "TOI": ["SOR", "TOI", "SIJ"],
+        "SIJ": ["TOI", "SIJ", "SKM", "APT"],
+        "APT": ["SIJ", "APT", "LNA"],
+        "LNA": ["APT", "LNA", "TE"],
+        "TE": ["LNA", "TE", "OHM"],
+        "SKM": ["SIJ", "SKM", "KNH"],
+        "KNH": ["SKM", "KNH", "JKI"],
+        "JKI": ["KNH", "JKI", "LUI"]
+    }
+    
+    subnetwork_volumes = {}
+    
+    for subnetwork, terminal_pairs in SUBNETWORK_TERMINAL_PAIRS.items():
+        terminal_pair_volumes = defaultdict(int)
+        subnetwork_stations = set(SUBNETWORK_STATIONS[subnetwork])
+        
+        for path, frequency in path_frequencies.items():
+            path_list = list(path)
+            
+            # Find which stations in this path belong to our subnetwork
+            subnetwork_indices = []
+            for i, station in enumerate(path_list):
+                if station in subnetwork_stations:
+                    subnetwork_indices.append((i, station))
+            
+            if len(subnetwork_indices) >= 2:
+                # The entry point is the first subnetwork station
+                entry_index, entry_station = subnetwork_indices[0]
+                # The exit point is the last subnetwork station  
+                exit_index, exit_station = subnetwork_indices[-1]
+                
+                # Create sorted tuple to make direction irrelevant
+                terminal_pair = tuple(sorted([entry_station, exit_station]))
+                
+                # Check if this sorted terminal pair is valid for this subnetwork
+                # We need to check if the sorted version exists in terminal_pairs
+                sorted_terminal_pairs = [tuple(sorted(pair)) for pair in terminal_pairs]
+                if terminal_pair in sorted_terminal_pairs:
+                    terminal_pair_volumes[terminal_pair] += frequency
+        
+        subnetwork_volumes[subnetwork] = dict(terminal_pair_volumes)
+    
+    return subnetwork_volumes
+
+def print_subnetwork_summary(subnetwork_volumes):
+    """
+    Print a summary for each subnetwork's terminal pair volumes.
+    """
+    if not subnetwork_volumes:
+        print("No subnetwork volume data to display.")
+        return
+        
+    for subnetwork, volumes in subnetwork_volumes.items():
+        if volumes:
+            print(f"\n=== {subnetwork} SUBNETWORK VOLUME SUMMARY ===")
+            print("-" * 50)
+            
+            total_volume = 0
+            for (from_station, to_station), volume in sorted(volumes.items(), key=lambda x: x[1], reverse=True):
+                from_name = SUBNETWORK_STATIONS.get(from_station, from_station)
+                to_name = SUBNETWORK_STATIONS.get(to_station, to_station)
+                print(f"  {from_station} → {to_station}: {volume} trains  ({from_name} → {to_name})")
+                total_volume += volume
+            
+            print(f"Total {subnetwork} subnetwork journeys: {total_volume}")
+
+def save_subnetwork_volumes(subnetwork_volumes, output_dir):
+    """
+    Save separate volume files for each subnetwork.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    for subnetwork, volumes in subnetwork_volumes.items():
+        # Create filename for this subnetwork
+        output_file = os.path.join(output_dir, f"{subnetwork}_volumes.json")
+        
+        # Convert tuple keys to strings for JSON
+        output_dict = {}
+        for key, value in volumes.items():
+            key_str = str(key)
+            output_dict[key_str] = value
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(output_dict, f, indent=2, ensure_ascii=False)
+        
+        print(f"Subnetwork {subnetwork} volumes saved to {output_file}")
+
 def analyze_path_frequencies(train_data):
     """
-    Analyze complete path frequencies through the network.
-    Tracks the sequence of unique stations a train passes through in the subnetwork.
+    Use the reconstructed paths from data.py instead of analyzing paths here.
     """
     path_frequencies = defaultdict(int)
     
-    # Get all timetable rows for this train
-    rows = train_data.get('timeTableRows', [])
+    # Get the reconstructed path that data.py already created
+    reconstructed_path = train_data.get('reconstructedPath', [])
     
-    # Extract the sequence of UNIQUE stations in our subnetwork
-    station_sequence = []
-    last_station = None
+    # Filter to only include stations in our subnetwork
+    subnetwork_path = [station for station in reconstructed_path if station in ALL_TRACKED_STATIONS]
     
-    for row in rows:
-        station = row.get('stationShortCode', '')
-        
-        # Map KUOT to KUO
-        if station == "KUOT":
-            station = "KUO"
-        
-        if station in ALL_TRACKED_STATIONS and station != last_station:
-            station_sequence.append(station)
-            last_station = station
-    
-    # If we have at least 2 unique stations in our subnetwork, track the path
-    if len(station_sequence) >= 2:
-        path_tuple = tuple(station_sequence)
+    # If we have at least 2 subnetwork stations, track the path
+    if len(subnetwork_path) >= 2:
+        path_tuple = tuple(subnetwork_path)
         path_frequencies[path_tuple] += 1
-        print(f"Train {train_data.get('trainNumber')} path: {' → '.join(station_sequence)}")
+        print(f"Train {train_data.get('trainNumber')} path: {' → '.join(subnetwork_path)}")
     
     return path_frequencies
 
@@ -228,7 +337,6 @@ def print_terminal_summary(frequencies):
     
     print(f"\nTotal station journeys: {total_trains}")
 
-# Modify the process_trains_from_file function to include path tracking
 def process_trains_from_file(input_file, output_file):
     """
     Main function to process trains from JSON file and update frequencies.
@@ -236,7 +344,7 @@ def process_trains_from_file(input_file, output_file):
     # Load existing frequencies
     all_frequencies = load_existing_frequencies(output_file)
     
-    # Load existing path frequencies - add this line
+    # Load existing path frequencies
     output_path_file = output_file.replace('_volumes.json', '_path_volumes.json')
     all_path_frequencies = load_existing_path_frequencies(output_path_file)
     
@@ -269,8 +377,6 @@ def process_trains_from_file(input_file, output_file):
     for train in trains_data:
         if isinstance(train, dict):
             frequencies, in_subnetwork, entry_station, exit_station = analyze_traffic_frequencies(train)
-            
-            # ADD PATH FREQUENCY ANALYSIS HERE
             path_frequencies = analyze_path_frequencies(train)
             
             if in_subnetwork:
@@ -287,7 +393,7 @@ def process_trains_from_file(input_file, output_file):
                 all_frequencies[station_pair] += count
                 station_journeys_count += count
             
-            # Increment path frequencies - add this block
+            # Increment path frequencies
             for path, count in path_frequencies.items():
                 all_path_frequencies[path] += count
             
@@ -308,17 +414,22 @@ def process_trains_from_file(input_file, output_file):
     # Print station summary
     print_terminal_summary(all_frequencies)
     
-    # Print path summary - add this line
+    # Print path summary
     print_path_summary(all_path_frequencies)
+    
+    # Calculate and save subnetwork volumes - UPDATED THIS BLOCK
+    subnetwork_volumes = derive_subnetwork_volumes(all_path_frequencies)
+    print_subnetwork_summary(subnetwork_volumes)
+    
+    # Save subnetwork volumes to separate files - UPDATED THIS LINE
+    output_subnetworks_dir = "data/travel_volumes/subnetwork_yearly"
+    save_subnetwork_volumes(subnetwork_volumes, output_subnetworks_dir)
     
     # Save updated frequencies
     save_frequencies(all_frequencies, output_file)
-    
-    # Save path frequencies - add this line
     save_path_frequencies(all_path_frequencies, output_path_file)
     
     return all_frequencies
-
 # Example usage
 if __name__ == "__main__":
     monthIndexes = ["0" + str(i) for i in range(1, 10)] + ["10", "11", "12"]
