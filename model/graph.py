@@ -137,7 +137,7 @@ def add_reliabilities(G: nx.Graph, reliabilities: dict[str, float]) -> nx.Graph:
         G.nodes[node]['reliability'] = reliability
     return G
 
-def construct_graph(filename: str) -> nx.Graph:
+def construct_graph(filename: str) -> tuple[nx.Graph, nx.Graph]:
     """
         Parameters:
         -----------
@@ -245,6 +245,7 @@ def plot_network(G: nx.Graph):
 
 
 if __name__ == '__main__':
+    
     filename = 'data/network/@dippa_data.json'
 
     G, G_original = construct_graph(filename)

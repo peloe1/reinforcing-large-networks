@@ -32,6 +32,99 @@ TERMINALS = list(SUBNETWORK_STATIONS.keys())
 # All stations that should be tracked (subnetwork + terminals)
 ALL_TRACKED_STATIONS = set(SUBNETWORK_STATIONS.keys())
 
+def analyze_path_frequencies(train_data):
+    """
+    Analyze complete path frequencies through the network.
+    Tracks the sequence of unique stations a train passes through in the subnetwork.
+    """
+    path_frequencies = defaultdict(int)
+    
+    # Get all timetable rows for this train
+    rows = train_data.get('timeTableRows', [])
+    
+    # Extract the sequence of UNIQUE stations in our subnetwork
+    station_sequence = []
+    last_station = None
+    
+    for row in rows:
+        station = row.get('stationShortCode', '')
+        
+        # Map KUOT to KUO
+        if station == "KUOT":
+            station = "KUO"
+        
+        if station in ALL_TRACKED_STATIONS and station != last_station:
+            station_sequence.append(station)
+            last_station = station
+    
+    # If we have at least 2 unique stations in our subnetwork, track the path
+    if len(station_sequence) >= 2:
+        path_tuple = tuple(station_sequence)
+        path_frequencies[path_tuple] += 1
+        print(f"Train {train_data.get('trainNumber')} path: {' → '.join(station_sequence)}")
+    
+    return path_frequencies
+
+def load_existing_path_frequencies(output_path_file):
+    """
+    Load existing path frequencies from JSON file if it exists.
+    """
+    if os.path.exists(output_path_file):
+        try:
+            with open(output_path_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            # Convert string keys back to tuples
+            path_frequencies = defaultdict(int)
+            for key_str, value in data.items():
+                # Convert string like "('KUO','SOR','TOI')" back to tuple
+                key_str_clean = key_str.strip("()")
+                parts = [part.strip().strip("'\"") for part in key_str_clean.split(",")]
+                key_tuple = tuple(parts)
+                path_frequencies[key_tuple] = value
+            print(f"Loaded existing path frequencies from {output_path_file}")
+            return path_frequencies
+        except Exception as e:
+            print(f"Error loading existing path frequencies: {e}. Starting fresh.")
+            return defaultdict(int)
+    else:
+        print("No existing path frequency file found. Starting fresh.")
+        return defaultdict(int)
+
+def save_path_frequencies(path_frequencies, output_path_file):
+    """
+    Save path frequencies to JSON file.
+    """
+    os.makedirs(os.path.dirname(output_path_file), exist_ok=True)
+    
+    output_dict = {}
+    for key, value in path_frequencies.items():
+        key_str = str(key)
+        output_dict[key_str] = value
+    
+    with open(output_path_file, 'w', encoding='utf-8') as f:
+        json.dump(output_dict, f, indent=2, ensure_ascii=False)
+    
+    print(f"Path frequencies saved to {output_path_file}")
+
+def print_path_summary(path_frequencies):
+    """
+    Print a summary of path frequencies.
+    """
+    if not path_frequencies:
+        print("No path frequency data to display.")
+        return
+        
+    print("\n=== PATH FREQUENCY SUMMARY ===")
+    print("-" * 60)
+    
+    total_paths = 0
+    for path, freq in sorted(path_frequencies.items(), key=lambda x: x[1], reverse=True):
+        path_str = ' → '.join(path)
+        print(f"  {path_str}: {freq} train(s)")
+        total_paths += freq
+    
+    print(f"\nTotal paths tracked: {total_paths}")
+
 def analyze_traffic_frequencies(train_data):
     """
     Analyze traffic frequencies - track ALL station pairs as terminals.
@@ -135,12 +228,17 @@ def print_terminal_summary(frequencies):
     
     print(f"\nTotal station journeys: {total_trains}")
 
+# Modify the process_trains_from_file function to include path tracking
 def process_trains_from_file(input_file, output_file):
     """
     Main function to process trains from JSON file and update frequencies.
     """
     # Load existing frequencies
     all_frequencies = load_existing_frequencies(output_file)
+    
+    # Load existing path frequencies - add this line
+    output_path_file = output_file.replace('_volumes.json', '_path_volumes.json')
+    all_path_frequencies = load_existing_path_frequencies(output_path_file)
     
     # Load train data
     try:
@@ -155,7 +253,7 @@ def process_trains_from_file(input_file, output_file):
     
     # Handle both single train and list of trains
     if isinstance(trains_data, dict):
-        trains_data = [trains_data]  # Convert single train to list
+        trains_data = [trains_data]
     elif not isinstance(trains_data, list):
         print("Invalid data format: expected dict or list of dicts")
         return all_frequencies
@@ -172,9 +270,11 @@ def process_trains_from_file(input_file, output_file):
         if isinstance(train, dict):
             frequencies, in_subnetwork, entry_station, exit_station = analyze_traffic_frequencies(train)
             
+            # ADD PATH FREQUENCY ANALYSIS HERE
+            path_frequencies = analyze_path_frequencies(train)
+            
             if in_subnetwork:
                 subnetwork_trains_count += 1
-                # Check if this train has a station pair
                 if not frequencies:
                     missing_trains.append({
                         'train_number': train.get('trainNumber'),
@@ -186,6 +286,11 @@ def process_trains_from_file(input_file, output_file):
             for station_pair, count in frequencies.items():
                 all_frequencies[station_pair] += count
                 station_journeys_count += count
+            
+            # Increment path frequencies - add this block
+            for path, count in path_frequencies.items():
+                all_path_frequencies[path] += count
+            
             processed_count += 1
     
     print(f"\n=== DEBUG INFO ===")
@@ -203,14 +308,21 @@ def process_trains_from_file(input_file, output_file):
     # Print station summary
     print_terminal_summary(all_frequencies)
     
+    # Print path summary - add this line
+    print_path_summary(all_path_frequencies)
+    
     # Save updated frequencies
     save_frequencies(all_frequencies, output_file)
+    
+    # Save path frequencies - add this line
+    save_path_frequencies(all_path_frequencies, output_path_file)
     
     return all_frequencies
 
 # Example usage
 if __name__ == "__main__":
     monthIndexes = ["0" + str(i) for i in range(1, 10)] + ["10", "11", "12"]
+    output_file = "data/travel_volumes/2024_volumes.json"
     for month in monthIndexes:
         inputs = []
         outputs = []
@@ -219,12 +331,13 @@ if __name__ == "__main__":
             #outputs.append("data/travel_volumes/2024-" + month + "_volumes.json")
             if i < 10:
                 inputs.append("data/juna_data/2024-" + month + "/2024-" + month + "-0" + str(i) + "_trains.json")
-                outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-0"+ str(i) + "_trains.json")
+                #outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-0"+ str(i) + "_trains.json")
             else:
                 inputs.append("data/juna_data/2024-" + month + "/2024-" + month + "-" + str(i) + "_trains.json")
-                outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-"+ str(i) + "_trains.json")
+                #outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-"+ str(i) + "_trains.json")
         
-        for input_file, output_file in zip(inputs, outputs):
+        #for input_file, output_file in zip(inputs, outputs):
+        for input_file in inputs:
             # Check if input file exists
             if not os.path.exists(input_file):
                 print(f"Error: Input file '{input_file}' does not exist.")
