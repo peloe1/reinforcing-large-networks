@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-06T23:45:11.702447",
+    "total_portfolios": 2,
+    "number_of_actions": 4
+  },
+  "node_reinforcements": [
+    [
+      "616|SOR Päätepiste|V0003|V0005",
+      0.995
+    ],
+    [
+      "SOR Puskin|V0003",
+      0.995
+    ],
+    [
+      "SOR V0001",
+      0.995
+    ],
+    [
+      "SOR V0003",
+      0.995
+    ]
+  ],
+  "cost_efficient_portfolios": [
+    {
+      "portfolio_id": 0,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reinforced_nodes": [],
+      "performance": 10895.940000000002,
+      "cost": 0.0,
+      "total_cost": 0.0
+    },
+    {
+      "portfolio_id": 4,
+      "binary_vector": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "reinforced_nodes": [
+        "SOR V0001"
+      ],
+      "performance": 10950.97,
+      "cost": 1,
+      "total_cost": 1
+    }
+  ]
+}

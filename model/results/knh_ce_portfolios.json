@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-06T23:45:06.272445",
+    "total_portfolios": 2,
+    "number_of_actions": 4
+  },
+  "node_reinforcements": [
+    [
+      "617|KNH Päätepiste|V0011|V0381",
+      0.995
+    ],
+    [
+      "KNH Puskin|V0382",
+      0.995
+    ],
+    [
+      "KNH V0381",
+      0.995
+    ],
+    [
+      "KNH V0382",
+      0.995
+    ]
+  ],
+  "cost_efficient_portfolios": [
+    {
+      "portfolio_id": 0,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reinforced_nodes": [],
+      "performance": 251.46,
+      "cost": 0.0,
+      "total_cost": 0.0
+    },
+    {
+      "portfolio_id": 4,
+      "binary_vector": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "reinforced_nodes": [
+        "KNH V0381"
+      ],
+      "performance": 252.73,
+      "cost": 1,
+      "total_cost": 1
+    }
+  ]
+}

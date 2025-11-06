@@ -1,11 +1,9 @@
 import networkx as nx
-import numpy as np
 import time
-import multiprocessing as mp
-from multiprocessing import Manager
 
-from portfolio import dominates_with_cost, generate_feasible_portfolios_old, generate_feasible_portfolios
+from portfolio import dominates_with_cost
 from performance import expected_travel
+from portfolio import is_feasible
 
 
 def bitmask_to_portfolio(mask: int, r: int) -> list[int]:
@@ -14,11 +12,13 @@ def bitmask_to_portfolio(mask: int, r: int) -> list[int]:
 # TODO: Make this work for general node reinforcement indices, not just 0, 1, ..., r
 def cost_efficient_portfolios(G: nx.Graph, 
                               paths: dict[tuple[str, str], list[list[str]]], 
-                              node_reinforcements: list[tuple[str, float]], 
-                              Q_F: set[int], 
-                              portfolio_costs: dict[int, list[float]], 
+                              node_reinforcements: list[tuple[str, float]],
+                              action_costs: dict[str, list[float]],
+                              budget: list[float], 
+                              #Q_F: set[int], 
+                              #portfolio_costs: dict[int, list[float]], 
                               travel_volumes: dict[tuple[str, str], float],
-                              verbose=False) -> tuple[set[int], dict[int, float]]:
+                              verbose=False) -> tuple[set[int], dict[int, float], dict[int, list[float]]]:
     """
     Parameters:
         G (networkx.Graph): The graph in its original state with no portfolios applied and no disruptions.
@@ -32,6 +32,10 @@ def cost_efficient_portfolios(G: nx.Graph,
     
     r = len(node_reinforcements)
     Q: set[int] = set()
+    noOfActions = len(node_reinforcements)
+
+    portfolio_costs: dict[int, list[float]] = {}
+    portfolio_costs[0] = [0.0 for _ in range(len(budget))]
     
     # Trivially cost-efficient portfolio
     performance: float = expected_travel(G, paths, travel_volumes)
@@ -44,12 +48,21 @@ def cost_efficient_portfolios(G: nx.Graph,
         #print(f"Iteration {l+1}/{r}: ")
         
         newQ = set()
-        mask = ~(1 << l)  # Bitmask to zero out the lth bit
-        for q1 in Q_F:
-            if (q1 >> l) & 1: # True if the lth bit is one
-                q1_masked = q1 & mask
-                if any((q2 & mask) == q1_masked for q2 in Q):
-                    newQ.add(q1)
+        #mask = ~(1 << l)  # Bitmask to zero out the lth bit
+        
+        for q2 in Q:
+            q1 = (1 << l) | q2 # Set the lth bit to be one
+            feasibility, cost_vector = is_feasible(noOfActions, q1, action_costs, budget)
+            if feasibility:
+                portfolio_costs[q1] = cost_vector
+                newQ.add(q1)
+            
+        
+        #for q1 in Q_F:
+        #    if (q1 >> l) & 1: # True if the lth bit is one
+        #        q1_masked = q1 & mask
+        #        if any((q2 & mask) == q1_masked for q2 in Q):
+        #            newQ.add(q1)
  
         #print(f"Number of portfolios considered in Q_{l+1}: {len(newQ)}")
 
@@ -85,4 +98,4 @@ def cost_efficient_portfolios(G: nx.Graph,
         end = time.time()
         print(f"Time for iteration {l+1}: {(end - start):.2f} seconds.")
 
-    return Q, performances
+    return Q, performances, portfolio_costs

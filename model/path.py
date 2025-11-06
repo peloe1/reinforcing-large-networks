@@ -19,7 +19,7 @@ def terminal_pairs(terminal_nodes: list[str]) -> list[tuple[str, str]]:
 
     pairs: list[tuple[str, str]] = []
     for i, u in enumerate(terminal_nodes):
-        for v in terminal_nodes[i+1:]:
+        for v in terminal_nodes:#[i+1:]:
             if u != v:
                 pairs.append((u, v))
     

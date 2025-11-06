@@ -6,54 +6,111 @@ import random
 from information_set import compute_extreme_points
 from portfolio import generate_feasible_portfolios
 from subnetwork import cost_efficient_portfolios
-from model.path import terminal_pairs, feasible_paths
-from graph import construct_graph, generate_random_graph_with_positions
+from path import terminal_pairs, feasible_paths
+from graph import construct_graph, generate_random_graph_with_positions, add_reliabilities
+from travel_volumes import read_travel_volumes
+from result_handling import save_cost_efficient_portfolios
 
 
 
-def main() -> None:
-    filename = 'data/network/sij.json'
-    num_nodes = 40
+def main(verbose = False) -> None:
+    subnetworks = ["apt", "jki", "knh", "kuo", "lna", "sij", "skm", "sor", "te", "toi"]
+    filenames = ["data/network/dipan_data/" + subnetwork + ".json" for subnetwork in subnetworks]
+    travel_volumes = ["data/travel_volumes/subnetwork_yearly/" + subnetwork.upper() + "_volumes.json" for subnetwork in subnetworks]
 
-    reliabilities = {i: 0.99 for i in range(num_nodes)}
-    terminal_nodes = [2, 11, 32] # East, West, South
-    for node in terminal_nodes:
-        reliabilities[node] = 1.0
+    all_terminal_nodes = {"apt": ["LNA V0001", "SIJ V0632", "APT V0002", "APT V0001"],
+                          "jki": ["KNH V0381", "LUI V0511", "JKI V0411", "JKI V0422"],
+                          "knh": ["JKI V0411", "SKM V0262", "KNH V0381"],
+                          "kuo": ["SOR V0001", "KRM V0001|V0002", "KUO V0941", "KUO V0002"], # Check that the 2nd and 4th are correct
+                          "lna": ["TE V0001", "APT V0002", "LNA V0002", "LNA V0001"],
+                          "sij": ["SKM V0271", "APT V0001", "TOI V0002", "SIJ V0642", "SIJ V0632", "SIJ V0611"],
+                          "skm": ["SIJ V0642", "KNH V0381", "SKM V0262", "SKM V0271"],
+                          "sor": ["TOI V0001", "KUO V0002", "SOR V0001"],
+                          "te": ["OHM V0002", "LNA V0002", "TE V0001", "TE V0002"],
+                          "toi": ["SIJ V0611", "SOR V0001", "TOI V0001", "TOI V0002"]}
     
-    G, G_original = construct_graph(filename, reliabilities)
+    for filename, subnetwork, travel_volume_path in zip(filenames, subnetworks, travel_volumes):
+        print("\n\n\n")
+        print("-"*50)
+        print("Looking at subnetwork: ", subnetwork.upper())
+        
+        G, G_original = construct_graph(filename)
 
-    for node in terminal_nodes:
-        G.nodes[node]['reliability'] = 1
+        #node_to_idx = {node: i for i, node in enumerate(G.nodes())}
 
-    terminal_node_pairs = terminal_pairs(terminal_nodes)
-    
-    travel_volumes = {pair: 100 for pair in terminal_node_pairs}
+        node_list = sorted(G.nodes())
+        if verbose:
+            print("Node list ", node_list)
+        
+        terminal_nodes = all_terminal_nodes[subnetwork]
+        reliabilities = {node: 0.99 for node in node_list} # Every node gets reliability 0.99 at the start
+        artificial_nodes = []
+        for node in terminal_nodes:
+            if node[:3].lower() != subnetwork: # Fix the artificial nodes's reliability to 1.0 so they can't be disrupted
+                artificial_nodes.append(node)
+                reliabilities[node] = 1.0
 
-    paths = feasible_paths(G, G_original, terminal_node_pairs)
+        
+        G = add_reliabilities(G, reliabilities)
+        
+        terminal_node_pairs = terminal_pairs(terminal_nodes)
+        
+        if verbose:
+            print("Terminal node pairs: ", terminal_node_pairs)
+            print("Number of terminal node pairs: ", len(terminal_node_pairs))
 
-    r = 32
-    node_reinforcements = [(i, 0.995) for i in range(r)]
-    costs = {i: [1] for i in range(r)}
-    budget = [10]
+        travel_volumes = read_travel_volumes(travel_volume_path)
+        
+        pairs_to_remove = []
+        for (u, v) in terminal_node_pairs:
+            if (u, v) not in travel_volumes:
+                if (u, v) in terminal_node_pairs:
+                    pairs_to_remove.append((u, v))
+            if (v, u) not in travel_volumes:
+                if (v, u) in terminal_node_pairs:
+                    pairs_to_remove.append((v, u))
+        
+        for pair in pairs_to_remove:
+            if pair in terminal_node_pairs:
+                terminal_node_pairs.remove(pair)
+        
+        if verbose:
+            print("Terminal node pairs, after filtering: ", terminal_node_pairs)
+            print("And number of them ", len(terminal_node_pairs))
 
-    print("Computing the feasible portfolios")
+        paths = feasible_paths(G_original, G, terminal_node_pairs)
 
-    start = time.time()
-    Q_F, feasible_portfolio_costs = generate_feasible_portfolios(r, costs, budget)
-    end = time.time()
-    print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
-    
+        node_reinforcements = []
+        costs: dict[str, list[float]] = {}
+        for node in node_list:
+            if node not in artificial_nodes:
+                node_reinforcements.append((node, 0.995))
+                costs[node] = [1] # Start with uniform cost of 2 units for each action and only one resource
 
-    print("-----------------------------------------")
-    start = time.time()
-    Q_CE, portfolio_costs = cost_efficient_portfolios(G, paths, node_reinforcements, Q_F, feasible_portfolio_costs, travel_volumes, False)
-    end = time.time()
-    if end - start > 60:
-        print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
-    else:
-        print(f"Time to compute cost-efficient portfolios: {(end - start):.2f} seconds")
+        r = len(node_reinforcements)
 
-    print(f"Number of resulting cost-efficient portfolios: {len(Q_CE)}")
+        budget = [40]
+
+        #print("Computing the feasible portfolios")
+
+        #start = time.time()
+        #Q_F, feasible_portfolio_costs = generate_feasible_portfolios(r, costs, budget)
+        #end = time.time()
+        #print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
+        
+
+        print("-----------------------------------------")
+        start = time.time()
+        Q_CE, performances, portfolio_costs = cost_efficient_portfolios(G, paths, node_reinforcements, costs, budget, travel_volumes, False)#, Q_F, feasible_portfolio_costs, travel_volumes, False)
+        end = time.time()
+        if end - start > 60:
+            print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
+        else:
+            print(f"Time to compute cost-efficient portfolios: {(end - start):.2f} seconds")
+
+        print(f"Number of resulting cost-efficient portfolios for subnetwork {subnetwork.upper()}: {len(Q_CE)}")
+
+        save_cost_efficient_portfolios(Q_CE, performances, portfolio_costs, node_reinforcements, filename="model/results/" + subnetwork + "_ce_portfolios.json")
 
     return
     

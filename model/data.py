@@ -3,6 +3,8 @@ import json
 from typing import List, Dict, Any
 import os
 
+TOTAL_TRAIN_COUNTER = 0
+
 def load_trains_from_json(file_path: str) -> List[Dict]:
     """
     Load train data from JSON file.
@@ -151,6 +153,7 @@ def save_filtered_results(filtered_trains: List[Dict], output_file: str):
     """
     Save filtered results to a JSON file, including reconstructed paths.
     """
+    global TOTAL_TRAIN_COUNTER
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
     # Create a clean version for output (remove large binary data if any)
@@ -162,6 +165,9 @@ def save_filtered_results(filtered_trains: List[Dict], output_file: str):
     
     with open(output_file, 'w', encoding='utf-8') as file:
         json.dump(output_data, file, indent=2, ensure_ascii=False)
+    
+    
+    TOTAL_TRAIN_COUNTER += len(filtered_trains)
 
 
 def reconstruct_complete_path(timetable_rows: List[Dict]) -> List[str]:
@@ -267,14 +273,32 @@ def validate_reconstructed_paths(filtered_trains: List[Dict]):
     
     return True
 
+def get_total_trains_counter():
+    global TOTAL_TRAIN_COUNTER
+    return TOTAL_TRAIN_COUNTER
+
+def reset_total_trains_counter():
+    global TOTAL_TRAIN_COUNTER
+    TOTAL_TRAIN_COUNTER = 0
+    return
+
 # Update the main function to handle exceptions properly
 def main():
+    reset_total_trains_counter()
     # Include ALL stations including terminals
     SUBNETWORK_STATIONS = {
-        "KRM": "Kurkimäki", "KUO": "Kuopio", "SOR": "Sorsasalo", 
-        "TOI": "Toivala", "SIJ": "Siilinjärvi", "APT": "Alapitkä",
-        "LNA": "Lapinlahti", "TE": "Taipale", "OHM": "Ohenmäki", 
-        "SKM": "Sänkimäki", "KNH": "Kinahmi", "JKI": "Juankoski", 
+        "KRM": "Kurkimäki", 
+        "KUO": "Kuopio", 
+        "SOR": "Sorsasalo", 
+        "TOI": "Toivala", 
+        "SIJ": "Siilinjärvi", 
+        "APT": "Alapitkä",
+        "LNA": "Lapinlahti", 
+        "TE": "Taipale", 
+        "OHM": "Ohenmäki", 
+        "SKM": "Sänkimäki", 
+        "KNH": "Kinahmi", 
+        "JKI": "Juankoski", 
         "LUI": "Luikonlahti"
     }
     
@@ -325,6 +349,8 @@ def main():
                 print(f"❌ File not found: {JSON_FILE_PATH}")
             except Exception as e:
                 print(f"❌ Unexpected error processing {JSON_FILE_PATH}: {e}")
+
+    print("Total trains written: ", get_total_trains_counter())
 
 # Run the main function
 if __name__ == "__main__":

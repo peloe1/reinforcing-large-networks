@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-06T23:45:11.275445",
+    "total_portfolios": 3,
+    "number_of_actions": 8
+  },
+  "node_reinforcements": [
+    [
+      "LNA Puskin|V0005",
+      0.995
+    ],
+    [
+      "LNA V0001",
+      0.995
+    ],
+    [
+      "LNA V0002",
+      0.995
+    ],
+    [
+      "LNA V0003",
+      0.995
+    ],
+    [
+      "LNA V0004",
+      0.995
+    ],
+    [
+      "LNA V0005",
+      0.995
+    ],
+    [
+      "LNA V0006",
+      0.995
+    ],
+    [
+      "LNA V0007",
+      0.995
+    ]
+  ],
+  "cost_efficient_portfolios": [
+    {
+      "portfolio_id": 0,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reinforced_nodes": [],
+      "performance": 10753.231499999998,
+      "cost": 0.0,
+      "total_cost": 0.0
+    },
+    {
+      "portfolio_id": 4,
+      "binary_vector": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reinforced_nodes": [
+        "LNA V0002"
+      ],
+      "performance": 10806.98575,
+      "cost": 1,
+      "total_cost": 1
+    },
+    {
+      "portfolio_id": 6,
+      "binary_vector": [
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reinforced_nodes": [
+        "LNA V0001",
+        "LNA V0002"
+      ],
+      "performance": 10860.847875,
+      "cost": 2,
+      "total_cost": 2
+    }
+  ]
+}

@@ -430,6 +430,20 @@ def process_trains_from_file(input_file, output_file):
     save_path_frequencies(all_path_frequencies, output_path_file)
     
     return all_frequencies
+
+def read_travel_volumes(filename: str) -> dict[tuple[str, str], float]:
+    with open(filename, 'r') as file:
+        data = json.load(file)
+
+    # Convert string keys back to tuples if needed
+    tuple_data = {}
+    for key, value in data.items():
+        # Remove parentheses and split by comma
+        tuple_key = tuple(map(str.strip, key.strip("()").replace("'", "").split(",")))
+        tuple_data[tuple_key] = value
+    
+    return tuple_data
+
 # Example usage
 if __name__ == "__main__":
     monthIndexes = ["0" + str(i) for i in range(1, 10)] + ["10", "11", "12"]

@@ -99,6 +99,17 @@ def generate_feasible_portfolios_old(noOfActions: int, costs: list[float], budge
 def portfolio_as_bitmask(portfolio: list[int]) -> int:
     return sum((bit << i) for i, bit in enumerate(portfolio))
 
+def is_feasible(noOfActions: int, portfolio: int, costs: dict[str, list[float]], budget: list[float]) -> tuple[bool, list[float]]:
+    r = len(budget)
+    actions: dict[int, str] = {i: node for i, (node, _) in enumerate(costs.items())}
+    cost_vector = [sum(costs[actions[i]][j] * ((portfolio >> i) & 1) for i in range(noOfActions)) for j in range(r)]
+    if all(cost_vector[j] <= budget[j] for j in range(r)):
+        return (True, cost_vector)
+    else:
+        return (False, cost_vector)
+            
+
+
 # A new improved version, which hashes the portfolios (binary vectors) to integers (using the trivial choice for hash function) to speed up memory accesses and computations
 # q_i = 1 refers the the ith reinforcement action being selected in portfolio q, its corresponding node it is associated with is abstracted away here, but is 
 # accessible in nodeReinforcements variable in cost_efficient_portfolios function in ce_portfolios.py, the indexes of that list are the indexes i here.

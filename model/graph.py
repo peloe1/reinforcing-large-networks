@@ -246,7 +246,7 @@ def plot_network(G: nx.Graph):
 
 if __name__ == '__main__':
     
-    filename = 'data/network/@dippa_data.json'
+    filename = 'data/network/dipan_data/toi.json'#@network.json'
 
     G, G_original = construct_graph(filename)
 
