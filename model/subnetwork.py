@@ -15,8 +15,6 @@ def cost_efficient_portfolios(G: nx.Graph,
                               node_reinforcements: list[tuple[str, float]],
                               action_costs: dict[str, list[float]],
                               budget: list[float], 
-                              #Q_F: set[int], 
-                              #portfolio_costs: dict[int, list[float]], 
                               travel_volumes: dict[tuple[str, str], float],
                               verbose=False) -> tuple[set[int], dict[int, float], dict[int, list[float]]]:
     """

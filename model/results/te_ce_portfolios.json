@@ -1,18 +1,57 @@
 {
   "metadata": {
-    "generated_at": "2025-11-06T23:45:11.705445",
-    "total_portfolios": 1,
-    "number_of_actions": 0
+    "generated_at": "2025-11-07T10:20:15.316278",
+    "total_portfolios": 3,
+    "number_of_actions": 2
   },
-  "node_reinforcements": [],
+  "node_reinforcements": [
+    [
+      "TE V0001",
+      0.995
+    ],
+    [
+      "TE V0002",
+      0.995
+    ]
+  ],
   "cost_efficient_portfolios": [
     {
       "portfolio_id": 0,
-      "binary_vector": [],
+      "binary_vector": [
+        0,
+        0
+      ],
       "reinforced_nodes": [],
-      "performance": 10865.0,
+      "performance": 10648.8657,
       "cost": 0.0,
       "total_cost": 0.0
+    },
+    {
+      "portfolio_id": 2,
+      "binary_vector": [
+        0,
+        1
+      ],
+      "reinforced_nodes": [
+        "TE V0002"
+      ],
+      "performance": 10702.64285,
+      "cost": 1,
+      "total_cost": 1
+    },
+    {
+      "portfolio_id": 3,
+      "binary_vector": [
+        1,
+        1
+      ],
+      "reinforced_nodes": [
+        "TE V0001",
+        "TE V0002"
+      ],
+      "performance": 10756.661425000002,
+      "cost": 2,
+      "total_cost": 2
     }
   ]
 }

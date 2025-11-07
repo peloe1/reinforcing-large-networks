@@ -29,94 +29,101 @@ def main(verbose = False) -> None:
                           "te": ["OHM V0002", "LNA V0002", "TE V0001", "TE V0002"],
                           "toi": ["SIJ V0611", "SOR V0001", "TOI V0001", "TOI V0002"]}
     
+
+    
     for filename, subnetwork, travel_volume_path in zip(filenames, subnetworks, travel_volumes):
-        print("\n\n\n")
-        print("-"*50)
-        print("Looking at subnetwork: ", subnetwork.upper())
-        
-        G, G_original = construct_graph(filename)
+        if subnetwork == "kuo":
+            print("\n\n\n")
+            print("-"*50)
+            print("Looking at subnetwork: ", subnetwork.upper())
+            
+            G, G_original = construct_graph(filename)
 
-        #node_to_idx = {node: i for i, node in enumerate(G.nodes())}
+            #node_to_idx = {node: i for i, node in enumerate(G.nodes())}
 
-        node_list = sorted(G.nodes())
-        if verbose:
-            print("Node list ", node_list)
-        
-        terminal_nodes = all_terminal_nodes[subnetwork]
-        reliabilities = {node: 0.99 for node in node_list} # Every node gets reliability 0.99 at the start
-        artificial_nodes = []
-        for node in terminal_nodes:
-            if node[:3].lower() != subnetwork: # Fix the artificial nodes's reliability to 1.0 so they can't be disrupted
-                artificial_nodes.append(node)
-                reliabilities[node] = 1.0
+            node_list = sorted(G.nodes())
+            print("With " + str(len(node_list)) + " nodes")
 
-        
-        G = add_reliabilities(G, reliabilities)
-        
-        terminal_node_pairs = terminal_pairs(terminal_nodes)
-        
-        if verbose:
-            print("Terminal node pairs: ", terminal_node_pairs)
-            print("Number of terminal node pairs: ", len(terminal_node_pairs))
+            if verbose:
+                print("Node list ", node_list)
+            
+            terminal_nodes = all_terminal_nodes[subnetwork]
+            reliabilities = {node: 0.99 for node in node_list} # Every node gets reliability 0.99 at the start
+            artificial_nodes = []
+            for node in terminal_nodes:
+                if node[:3].lower().replace(" ", "") != subnetwork: # Fix the artificial nodes's reliability to 1.0 so they can't be disrupted
+                    artificial_nodes.append(node)
+                    reliabilities[node] = 1.0
 
-        travel_volumes = read_travel_volumes(travel_volume_path)
-        
-        pairs_to_remove = []
-        for (u, v) in terminal_node_pairs:
-            if (u, v) not in travel_volumes:
-                if (u, v) in terminal_node_pairs:
-                    pairs_to_remove.append((u, v))
-            if (v, u) not in travel_volumes:
-                if (v, u) in terminal_node_pairs:
-                    pairs_to_remove.append((v, u))
-        
-        for pair in pairs_to_remove:
-            if pair in terminal_node_pairs:
-                terminal_node_pairs.remove(pair)
-        
-        if verbose:
-            print("Terminal node pairs, after filtering: ", terminal_node_pairs)
-            print("And number of them ", len(terminal_node_pairs))
+            
+            G = add_reliabilities(G, reliabilities)
+            
+            terminal_node_pairs = terminal_pairs(terminal_nodes)
+            
+            if verbose:
+                print("Terminal node pairs: ", terminal_node_pairs)
+                print("Number of terminal node pairs: ", len(terminal_node_pairs))
 
-        paths = feasible_paths(G_original, G, terminal_node_pairs)
+            travel_volumes = read_travel_volumes(travel_volume_path)
+            
+            pairs_to_remove = []
+            for (u, v) in terminal_node_pairs:
+                if (u, v) not in travel_volumes:
+                    if (u, v) in terminal_node_pairs:
+                        pairs_to_remove.append((u, v))
+                if (v, u) not in travel_volumes:
+                    if (v, u) in terminal_node_pairs:
+                        pairs_to_remove.append((v, u))
+            
+            for pair in pairs_to_remove:
+                if pair in terminal_node_pairs:
+                    terminal_node_pairs.remove(pair)
+            
+            if verbose:
+                print("Terminal node pairs, after filtering: ", terminal_node_pairs)
+                print("And number of them ", len(terminal_node_pairs))
 
-        node_reinforcements = []
-        costs: dict[str, list[float]] = {}
-        for node in node_list:
-            if node not in artificial_nodes:
-                node_reinforcements.append((node, 0.995))
-                costs[node] = [1] # Start with uniform cost of 2 units for each action and only one resource
+            paths = feasible_paths(G_original, G, terminal_node_pairs)
 
-        r = len(node_reinforcements)
+            node_reinforcements = []
+            costs: dict[str, list[float]] = {}
+            for node in node_list:
+                if node not in artificial_nodes:
+                    node_reinforcements.append((node, 0.995))
+                    costs[node] = [1] # Start with uniform cost of 2 units for each action and only one resource
 
-        budget = [40]
+            r = len(node_reinforcements)
 
-        #print("Computing the feasible portfolios")
+            print("and " + str(r) + " of nodes to be considered for reinforcing")
 
-        #start = time.time()
-        #Q_F, feasible_portfolio_costs = generate_feasible_portfolios(r, costs, budget)
-        #end = time.time()
-        #print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
-        
+            budget = [40]
 
-        print("-----------------------------------------")
-        start = time.time()
-        Q_CE, performances, portfolio_costs = cost_efficient_portfolios(G, paths, node_reinforcements, costs, budget, travel_volumes, False)#, Q_F, feasible_portfolio_costs, travel_volumes, False)
-        end = time.time()
-        if end - start > 60:
-            print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
-        else:
-            print(f"Time to compute cost-efficient portfolios: {(end - start):.2f} seconds")
+            #print("Computing the feasible portfolios")
 
-        print(f"Number of resulting cost-efficient portfolios for subnetwork {subnetwork.upper()}: {len(Q_CE)}")
+            #start = time.time()
+            #Q_F, feasible_portfolio_costs = generate_feasible_portfolios(r, costs, budget)
+            #end = time.time()
+            #print(f"It took {(end - start):.2f} seconds to compute the {len(Q_F)} feasible portfolios")
+            
 
-        save_cost_efficient_portfolios(Q_CE, performances, portfolio_costs, node_reinforcements, filename="model/results/" + subnetwork + "_ce_portfolios.json")
+            print("-----------------------------------------")
+            start = time.time()
+            Q_CE, performances, portfolio_costs = cost_efficient_portfolios(G, paths, node_reinforcements, costs, budget, travel_volumes, False)#, Q_F, feasible_portfolio_costs, travel_volumes, False)
+            end = time.time()
+            if end - start > 60:
+                print(f"Time to compute cost-efficient portfolios: {(end - start)/60:.2f} minutes")
+            else:
+                print(f"Time to compute cost-efficient portfolios: {(end - start):.2f} seconds")
+
+            print(f"Number of resulting cost-efficient portfolios for subnetwork {subnetwork.upper()}: {len(Q_CE)}")
+
+            save_cost_efficient_portfolios(Q_CE, performances, portfolio_costs, node_reinforcements, filename="model/results/" + subnetwork + "_ce_portfolios.json")
 
     return
     
 
 if __name__ == "__main__":
-    main()
+    main(verbose = True)
 
 
 
