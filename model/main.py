@@ -3,13 +3,14 @@ import time
 import numpy as np
 import random
 
-from information_set import compute_extreme_points
+#from information_set import compute_extreme_points
 from portfolio import generate_feasible_portfolios
 from subnetwork import cost_efficient_portfolios
 from path import terminal_pairs, feasible_paths
 from graph import construct_graph, generate_random_graph_with_positions, add_reliabilities
 from travel_volumes import read_travel_volumes
-from result_handling import save_cost_efficient_portfolios
+from result_handling import save_cost_efficient_portfolios, save_combined_portfolios
+#from hierarchical import cost_efficient_combined_portfolios
 
 
 
@@ -29,10 +30,13 @@ def main(verbose = False) -> None:
                           "te": ["OHM V0002", "LNA V0002", "TE V0001", "TE V0002"],
                           "toi": ["SIJ V0611", "SOR V0001", "TOI V0001", "TOI V0002"]}
     
+    dict_Q_CE: dict[str, set[int]] = {}
+    dict_portfolio_costs: dict[str, dict[int, list[float]]] = {}
+    dict_reinforcement_actions: dict[str, list[tuple[str, float]]] = {}
 
     
     for filename, subnetwork, travel_volume_path in zip(filenames, subnetworks, travel_volumes):
-        if subnetwork == "kuo":
+        #if subnetwork == "kuo":
             print("\n\n\n")
             print("-"*50)
             print("Looking at subnetwork: ", subnetwork.upper())
@@ -96,7 +100,7 @@ def main(verbose = False) -> None:
 
             print("and " + str(r) + " of nodes to be considered for reinforcing")
 
-            budget = [40]
+            budget = [40.0]
 
             #print("Computing the feasible portfolios")
 
@@ -117,10 +121,57 @@ def main(verbose = False) -> None:
 
             print(f"Number of resulting cost-efficient portfolios for subnetwork {subnetwork.upper()}: {len(Q_CE)}")
 
-            save_cost_efficient_portfolios(Q_CE, performances, portfolio_costs, node_reinforcements, filename="model/results/" + subnetwork + "_ce_portfolios.json")
+            dict_Q_CE[subnetwork] = Q_CE
+            dict_portfolio_costs[subnetwork] = portfolio_costs
+            dict_reinforcement_actions[subnetwork] = node_reinforcements
 
-    return
+
+            save_cost_efficient_portfolios(Q_CE, performances, portfolio_costs, node_reinforcements, filename="model/results/" + subnetwork + "_ce_portfolios.json")
     
+    #filename = "data/network/dipan_data/@network.json"
+    #G, G_original = construct_graph(filename)
+#
+    #node_list = sorted(G.nodes())
+    #
+    ## TODO: Fix this
+    #terminal_nodes = []
+    #terminal_node_pairs = terminal_pairs(terminal_nodes)
+#
+    ## TODO: Fix the terminal pairs in this file to be the actual nodes
+    #travel_volume_path = "data/network/travel_volumes/2024_volumes.json"
+    #travel_volumes = read_travel_volumes(travel_volume_path)
+    #
+    #pairs_to_remove = []
+    #for (u, v) in terminal_node_pairs:
+    #    if (u, v) not in travel_volumes:
+    #        if (u, v) in terminal_node_pairs:
+    #            pairs_to_remove.append((u, v))
+    #    if (v, u) not in travel_volumes:
+    #        if (v, u) in terminal_node_pairs:
+    #            pairs_to_remove.append((v, u))
+    #
+    #for pair in pairs_to_remove:
+    #    if pair in terminal_node_pairs:
+    #        terminal_node_pairs.remove(pair)
+#
+    #Q_star, combined_performances, combined_costs = cost_efficient_combined_portfolios(G,
+    #                                                                                   G_original, 
+    #                                                                                   terminal_node_pairs, 
+    #                                                                                   travel_volumes, 
+    #                                                                                   dict_Q_CE, 
+    #                                                                                   subnetworks, 
+    #                                                                                   dict_reinforcement_actions, 
+    #                                                                                   dict_portfolio_costs, 
+    #                                                                                   budget, 
+    #                                                                                   len(subnetworks)
+    #                                                                                   )
+    #
+    #save_combined_portfolios(Q_star, 
+    #                         combined_performances, 
+    #                         combined_costs, 
+    #                         dict_reinforcement_actions, 
+    #                         subnetworks, 
+    #                         filename="model/results/whole_network_ce_portfolios.json")
 
 if __name__ == "__main__":
     main(verbose = True)

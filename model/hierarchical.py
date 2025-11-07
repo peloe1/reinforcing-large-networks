@@ -35,7 +35,7 @@ def cost_efficient_combined_portfolios( G: nx.Graph,
         Q = [Q] + [0 for _ in range(2, k)]
         # This for loops applies portfolio 'Q' to 'G_Q'
         # the kth reinforcement action increases the reliability of 'node' to 'prob'
-        for i, (node, prob, _) in enumerate(node_reinforcements[subnetworks[j]]):
+        for i, (node, prob) in enumerate(node_reinforcements[subnetworks[j]]):
             if (Q[0] >> i) & 1: # True if the ith bit of the portfolio corresponding to the 0th subnetwork is one
                 G_Q.nodes[node]['reliability'] = prob
         
@@ -63,7 +63,7 @@ def cost_efficient_combined_portfolios( G: nx.Graph,
                     G_Q = G.copy()
                     for i in range(j+1): # range(k) # looping all the way to k is redundant since we know that Q_copy[j+1], ... Q_copy[k-1] = 0
                         # Reinforcements to the ith subnetwork's nodes
-                        for m, (node, prob, _) in enumerate(node_reinforcements[subnetworks[i]]):
+                        for m, (node, prob) in enumerate(node_reinforcements[subnetworks[i]]):
                             if (Q_copy[i] >> m) & 1: # True if the mth bit of the portfolio corresponding to the ith subnetwork is one
                                 G_Q.nodes[node]['reliability'] = prob
                                 
