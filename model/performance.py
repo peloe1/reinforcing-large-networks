@@ -31,7 +31,7 @@ def utility_functions(G: nx.Graph,
 def expected_travel(G: nx.Graph,
                     all_paths: dict[tuple[str, str], list[list[str]]],
                     travel_volumes: dict[tuple[str, str], float]
-                    ) -> float:
+                    ) -> tuple[float, dict[tuple[str, str], float]]:
     """
         Parameters: 
         -----------
@@ -49,6 +49,9 @@ def expected_travel(G: nx.Graph,
         U: list[float]
             List of expected traffic volumes for each extreme point
     """
-    expectation: float = sum(travel_volumes[terminal_pair] * terminal_pair_reliability(G, path_set) for terminal_pair, path_set in all_paths.items())
 
-    return expectation
+    reliabilities: dict[tuple[str, str], float] = {pair: terminal_pair_reliability(G, path_set) for pair, path_set in all_paths.items()}
+
+    expectation: float = sum(travel_volumes[terminal_pair] * reliabilities[terminal_pair] for terminal_pair, path_set in all_paths.items())
+
+    return expectation, reliabilities

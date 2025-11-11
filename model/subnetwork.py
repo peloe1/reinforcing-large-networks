@@ -16,7 +16,7 @@ def cost_efficient_portfolios(G: nx.Graph,
                               action_costs: dict[str, list[float]],
                               budget: list[float], 
                               travel_volumes: dict[tuple[str, str], float],
-                              verbose=False) -> tuple[set[int], dict[int, float], dict[int, list[float]]]:
+                              verbose=False) -> tuple[set[int], dict[int, float], dict[int, list[float]], dict[int, dict[tuple[str, str], float]]]:
     """
     Parameters:
         G (networkx.Graph): The graph in its original state with no portfolios applied and no disruptions.
@@ -34,11 +34,15 @@ def cost_efficient_portfolios(G: nx.Graph,
 
     portfolio_costs: dict[int, list[float]] = {}
     portfolio_costs[0] = [0.0 for _ in range(len(budget))]
+
+    terminal_pair_reliabilities: dict[int, dict[tuple[str, str], float]] = {}
     
     # Trivially cost-efficient portfolio
-    performance: float = expected_travel(G, paths, travel_volumes)
+    performance, reliabilities = expected_travel(G, paths, travel_volumes)
     performances: dict[int, float] = {0: performance}
     Q.add(0)
+
+    terminal_pair_reliabilities[0] = reliabilities
 
     for l in range(r):
         start = time.time()
@@ -75,8 +79,9 @@ def cost_efficient_portfolios(G: nx.Graph,
 
 
             # Next we can calculate the expected performances of G_q
-            performance = expected_travel(G_q, paths, travel_volumes)
+            performance, reliabilities = expected_travel(G_q, paths, travel_volumes)
             performances[portfolio] = performance # Step 6
+            terminal_pair_reliabilities[portfolio] = reliabilities
 
         # The approach from Joaquin's paper
         dominated = set(filter(lambda q1: any(dominates_with_cost(performances[q2], performances[q1], portfolio_costs[q2], portfolio_costs[q1]) for q2 in Q), newQ))
@@ -96,4 +101,4 @@ def cost_efficient_portfolios(G: nx.Graph,
         end = time.time()
         print(f"Time for iteration {l+1}: {(end - start):.2f} seconds.")
 
-    return Q, performances, portfolio_costs
+    return Q, performances, portfolio_costs, reliabilities

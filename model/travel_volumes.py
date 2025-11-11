@@ -436,11 +436,17 @@ def read_travel_volumes(filename: str) -> dict[tuple[str, str], float]:
         data = json.load(file)
 
     # Convert string keys back to tuples if needed
+
     tuple_data = {}
     for key, value in data.items():
         # Remove parentheses and split by comma
-        tuple_key = tuple(map(str.strip, key.strip("()").replace("'", "").split(",")))
-        tuple_data[tuple_key] = value
+        n1, n2 = tuple(map(str.strip, key.strip("()").replace("'", "").split(",")))
+        if n1 != n2:
+            tuple_key = tuple(sorted([n1, n2]))
+            if tuple_key in tuple_data:
+                tuple_data[tuple_key] += value
+            else:
+                tuple_data[tuple_key] = value
     
     return tuple_data
 

@@ -8,7 +8,7 @@ import numpy as np
 
 # TODO: Double check that this works and optimize it
 def cost_efficient_combined_portfolios( G: nx.Graph,
-                                        partitioned_paths: dict[tuple[str, str], list[tuple[str, str]]],
+                                        path_list: dict[tuple[str, str], list[list[str]]],
                                         terminal_pair_reliabilities: dict[str, dict[tuple[str, str], float]],
                                         travel_volumes: dict[tuple[str, str], float],
                                         Q_CE: dict[str, set[int]],
@@ -41,8 +41,7 @@ def cost_efficient_combined_portfolios( G: nx.Graph,
                 G_Q.nodes[node]['reliability'] = prob
         
         Q_star.add(tuple(Q))
-        #combined_performances[tuple(Q)] = expected_travel(G_Q, path_list, travel_volumes)
-        # TODO: Compute the terminal pair reliabilities for this case and then dot product with travel volumes
+        combined_performances[tuple(Q)] = expected_travel(G_Q, path_list, travel_volumes)
         combined_costs[tuple(Q)] = cost_dict[Q[0]]
     
     end = time.time()

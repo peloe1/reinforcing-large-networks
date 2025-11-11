@@ -1,5 +1,6 @@
 import numpy as np
 import networkx as nx
+from networkx import is_connected
 import random
 from graph import *
 
@@ -250,6 +251,78 @@ def is_path_feasible(detailed_path: list[str], G: nx.Graph, max_turn_angle: floa
             return False
             
     return True
+
+def create_subnetwork_connectivity_graph(all_terminal_nodes: dict[str, list[str]]) -> nx.Graph:
+    """Create a graph where nodes are subnetworks and edges represent connections."""
+    G = nx.Graph()
+    
+    # Add all subnetworks as nodes
+    for _, terminal_nodes in all_terminal_nodes.items():
+        for node in terminal_nodes:
+            G.add_node(node)
+    
+    # Find connections between subnetworks by looking at shared terminal nodes
+    for _, nodes1 in all_terminal_nodes.items():
+        for _, nodes2 in all_terminal_nodes.items():
+            shared_connections = list(set(nodes1).intersection(set(nodes2)))
+            print("Number of shared nodes: ", len(shared_connections))
+            print("Shared nodes: ", shared_connections)
+            
+            for n1 in shared_connections:
+                for n2 in shared_connections:
+                    if n1 != n2:
+                        G.add_edge(n1, n2)
+    
+    return G
+
+def find_subnetwork_path(source_sub: str, target_sub: str, connectivity_graph: nx.Graph) -> list[str]:
+    """Find the shortest path between two subnetworks."""
+    try:
+        return nx.shortest_path(connectivity_graph, source_sub, target_sub)
+    except nx.NetworkXNoPath:
+        return []
+
+def break_into_subnetwork_sequences(terminal_pairs: list[tuple[str, str]], 
+                                    all_terminal_nodes: dict[str, list[str]]
+                                   ) -> dict[tuple[str, str], list[tuple[str, str]]]:
+    """
+    Break terminal pairs into sequences where each pair belongs to one subnetwork.
+    Returns a dictionary mapping original pairs to lists of subnetwork-specific paths.
+    """
+    
+    # Create connectivity graph
+    connectivity_graph = create_subnetwork_connectivity_graph(all_terminal_nodes)
+    print("Number of nodes in connectivity graph: ", len(connectivity_graph.nodes()))
+    print("Number of edges in connectivity graph: ", len(connectivity_graph.edges()))
+    print(sorted(connectivity_graph.nodes()))
+    print("Graph is connected: ", is_connected(connectivity_graph))
+    
+    result = {}
+    
+    for source, target in terminal_pairs:
+        # Different subnetworks - need to find path through intermediate subnetworks
+        path = find_subnetwork_path(source, target, connectivity_graph)
+        
+        if path:
+            sequence = []
+            current = source
+            
+            for i in range(len(path) - 1):
+                next = path[i + 1]
+                sequence.append((current, next))
+                current = next
+            
+            result[(source, target)] = {
+                'path': sequence,
+            }
+        else:
+            # No path found
+            result[(source, target)] = {
+                'path': [],
+                'error': 'No path between subnetworks'
+            }
+    
+    return result
 
 if __name__ == '__main__':
     filename = 'data/network/sij.json'
