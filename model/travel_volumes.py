@@ -468,6 +468,9 @@ def subnetwork_travel_volumes(subnetworks: list[str],
         sorted_pair = sorted([u, v])
         terminal_pair = (sorted_pair[0], sorted_pair[1])
         pair_list, sub_path = intermediate_pairs[terminal_pair]
+
+        #if len(pair_list) != len(sub_path):
+
         for pair, sub in zip(pair_list, sub_path):
             if sub not in ['ohm', 'krm', 'lui']:
                 if pair not in volumes[sub]:

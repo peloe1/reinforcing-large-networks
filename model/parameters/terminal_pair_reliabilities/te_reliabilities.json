@@ -1,11 +1,25 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T12:33:08.288302",
+    "generated_at": "2025-11-13T23:54:55.649594",
     "subnetwork": "te",
-    "total_portfolios": 3,
-    "total_terminal_pairs": 0
+    "total_portfolios": 4,
+    "total_terminal_pairs": 3
   },
   "terminal_pair_reliabilities_by_portfolio": {
-    "0": {}
+    "0": {
+      "(LNA V0002, OHM V0002)": 0.9801,
+      "(OHM V0002, TE V0002)": 0.99,
+      "(LNA V0002, TE V0001)": 0.99
+    },
+    "2": {
+      "(LNA V0002, OHM V0002)": 0.98505,
+      "(OHM V0002, TE V0002)": 0.995,
+      "(LNA V0002, TE V0001)": 0.99
+    },
+    "3": {
+      "(LNA V0002, OHM V0002)": 0.990025,
+      "(OHM V0002, TE V0002)": 0.995,
+      "(LNA V0002, TE V0001)": 0.995
+    }
   }
 }

@@ -1,11 +1,25 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T12:33:08.290477",
+    "generated_at": "2025-11-13T23:54:55.663594",
     "subnetwork": "toi",
-    "total_portfolios": 5,
-    "total_terminal_pairs": 0
+    "total_portfolios": 8,
+    "total_terminal_pairs": 3
   },
   "terminal_pair_reliabilities_by_portfolio": {
-    "0": {}
+    "0": {
+      "(SIJ V0611, SOR V0001)": 0.9801,
+      "(SOR V0001, TOI V0001)": 0.99,
+      "(SIJ V0611, TOI V0002)": 0.99
+    },
+    "2": {
+      "(SIJ V0611, SOR V0001)": 0.98505,
+      "(SOR V0001, TOI V0001)": 0.995,
+      "(SIJ V0611, TOI V0002)": 0.99
+    },
+    "6": {
+      "(SIJ V0611, SOR V0001)": 0.990025,
+      "(SOR V0001, TOI V0001)": 0.995,
+      "(SIJ V0611, TOI V0002)": 0.995
+    }
   }
 }

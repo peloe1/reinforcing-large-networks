@@ -39,7 +39,7 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
         #        G_Q.nodes[node]['reliability'] = prob
         
         Q_star.add(tuple(Q))
-        combined_performances[tuple(Q)] = expected_travel_hierarchical(Q, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
+        combined_performances[tuple(Q)] = expected_travel_hierarchical(Q, subnetworks, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
         combined_costs[tuple(Q)] = cost_dict[Q[0]]
     
     end = time.time()
@@ -78,7 +78,7 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
                     #        if (Q_copy[i] >> m) & 1: # True if the mth bit of the portfolio corresponding to the ith subnetwork is one
                     #            G_Q.nodes[node]['reliability'] = prob
                                 
-                    combined_performances[tuple(Q_copy)] = expected_travel_hierarchical(Q_copy, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
+                    combined_performances[tuple(Q_copy)] = expected_travel_hierarchical(Q_copy, subnetworks, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
         # Step 7
         # dominates instead of dominates_with_cost
         dominated = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q1], combined_costs[Q2]) for Q2 in Q_star), Q_j))

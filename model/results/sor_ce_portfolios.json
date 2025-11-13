@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T15:52:52.437144",
+    "generated_at": "2025-11-13T23:54:55.638594",
     "total_portfolios": 2,
     "number_of_actions": 4
   },
@@ -32,7 +32,7 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 10882.080000000002,
+      "performance": 10895.940000000002,
       "cost": 0.0,
       "total_cost": 0.0
     },
@@ -47,7 +47,7 @@
       "reinforced_nodes": [
         "SOR V0001"
       ],
-      "performance": 10937.039999999999,
+      "performance": 10950.97,
       "cost": 1,
       "total_cost": 1
     }

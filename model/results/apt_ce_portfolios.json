@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T15:52:49.002704",
+    "generated_at": "2025-11-13T23:54:49.503063",
     "total_portfolios": 3,
     "number_of_actions": 6
   },
@@ -42,7 +42,7 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 10638.5895,
+      "performance": 10638.4707,
       "cost": 0.0,
       "total_cost": 0.0
     },
@@ -59,7 +59,7 @@
       "reinforced_nodes": [
         "APT V0002"
       ],
-      "performance": 10692.274749999999,
+      "performance": 10692.15535,
       "cost": 1,
       "total_cost": 1
     },
@@ -77,7 +77,7 @@
         "APT V0001",
         "APT V0002"
       ],
-      "performance": 10736.572375,
+      "performance": 10736.512675000002,
       "cost": 2,
       "total_cost": 2
     }

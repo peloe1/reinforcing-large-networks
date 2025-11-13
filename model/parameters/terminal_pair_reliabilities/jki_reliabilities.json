@@ -1,11 +1,25 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T12:33:08.264604",
+    "generated_at": "2025-11-13T23:54:49.518063",
     "subnetwork": "jki",
-    "total_portfolios": 5,
-    "total_terminal_pairs": 0
+    "total_portfolios": 9,
+    "total_terminal_pairs": 3
   },
   "terminal_pair_reliabilities_by_portfolio": {
-    "0": {}
+    "0": {
+      "(JKI V0422, LUI V0511)": 0.99,
+      "(KNH V0381, LUI V0511)": 0.9801,
+      "(JKI V0411, KNH V0381)": 0.99
+    },
+    "4": {
+      "(JKI V0422, LUI V0511)": 0.995,
+      "(KNH V0381, LUI V0511)": 0.98505,
+      "(JKI V0411, KNH V0381)": 0.99
+    },
+    "5": {
+      "(JKI V0422, LUI V0511)": 0.995,
+      "(KNH V0381, LUI V0511)": 0.990025,
+      "(JKI V0411, KNH V0381)": 0.995
+    }
   }
 }

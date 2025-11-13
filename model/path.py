@@ -256,37 +256,39 @@ def is_path_feasible(detailed_path: list[str], G: nx.Graph, max_turn_angle: floa
     return True
 
 def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]], 
-                                subnetwork_pairs: dict[str, list[tuple[str, str]]],
+                                #subnetwork_pairs: dict[str, list[tuple[str, str]]],
                                 node_to_subnetwork: dict[str, str],
                                 transitions: dict[tuple[str, str], tuple[str, str]],
-                                verbose=True
+                                verbose=False
                                ) -> dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]]:
     
     result: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]] = {}
-    all_terminal_nodes = set()
-    for _, pairs in subnetwork_pairs.items():
-        for (u, v) in pairs:
-            all_terminal_nodes.add(u)
-            all_terminal_nodes.add(v)
-
-    print("Pair OHM SOR is in all_paths: ", ('OHM V0002', 'SOR V0003') in all_paths)
+    #all_terminal_nodes = set()
+    #for _, pairs in subnetwork_pairs.items():
+    #    for (u, v) in pairs:
+    #        all_terminal_nodes.add(u)
+    #        all_terminal_nodes.add(v)
 
     for pair, path_set in all_paths.items():
         u, v = pair
         sorted_pair = sorted([u, v])
         pair = (sorted_pair[0], sorted_pair[1])
-        if pair not in result:
+        if not path_set:
+            print(f"Pair {pair} has no paths corresponding to it?")
+        elif pair not in result:
             path = path_set[0]
 
             subnetwork_path: list[str] = []
 
             for n in path:
-                if n not in all_terminal_nodes:
-                    continue
-
-                sub = node_to_subnetwork[n]
-                if sub not in subnetwork_path:
-                    subnetwork_path.append(sub)
+                #if n not in all_terminal_nodes:
+                #    continue
+                if n not in node_to_subnetwork:
+                    print(f"Node {n} is not in node_to_subnetwork dict???")
+                else:
+                    sub = node_to_subnetwork[n]
+                    if sub not in subnetwork_path:
+                        subnetwork_path.append(sub)
 
             if len(subnetwork_path) == 1:
                 print("WTF HAPPENED")
@@ -301,7 +303,8 @@ def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]
             sub2 = subnetwork_path[1]
             sorted_sub = sorted([sub1, sub2])
             sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
-            print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
+            if verbose:
+                print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
             
             prev = 0
             for next in range(2, len(subnetwork_path)):
@@ -309,7 +312,8 @@ def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]
                 sub2 = subnetwork_path[next]
                 sorted_sub = sorted([sub1, sub2])
                 sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
-                print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
+                if verbose:
+                    print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
                 prev += 1
 
             if len(subnetwork_path) > 2:
@@ -317,11 +321,19 @@ def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]
                 sub2 = subnetwork_path[-1]
                 sorted_sub = sorted([sub1, sub2])
                 sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
-                print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
+                if verbose:
+                    print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
+            else:
+                sub1 = subnetwork_path[0]
+                sub2 = subnetwork_path[1]
+                sorted_sub = sorted([sub1, sub2])
+                if sub1 not in ['krm', 'lui', 'ohm'] and sub2 not in ['krm', 'lui', 'ohm']:
+                    sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
 
             result[pair] = (sequence, subnetwork_path)
 
-            print("\n")
+            if verbose:
+                print("\n")
 
     return result
 

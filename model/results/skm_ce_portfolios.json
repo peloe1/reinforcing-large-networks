@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T15:52:52.433855",
+    "generated_at": "2025-11-13T23:54:55.630594",
     "total_portfolios": 3,
     "number_of_actions": 4
   },
@@ -32,7 +32,7 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 768.834,
+      "performance": 768.7152,
       "cost": 0.0,
       "total_cost": 0.0
     },
@@ -47,7 +47,7 @@
       "reinforced_nodes": [
         "SKM V0271"
       ],
-      "performance": 772.647,
+      "performance": 772.5876000000001,
       "cost": 1,
       "total_cost": 1
     },
@@ -63,7 +63,7 @@
         "SKM V0262",
         "SKM V0271"
       ],
-      "performance": 773.911,
+      "performance": 773.8513,
       "cost": 2,
       "total_cost": 2
     }

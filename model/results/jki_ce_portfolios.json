@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-13T15:52:49.011011",
+    "generated_at": "2025-11-13T23:54:49.519062",
     "total_portfolios": 3,
     "number_of_actions": 4
   },
@@ -32,7 +32,7 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 255.9051,
+      "performance": 504.3951,
       "cost": 0.0,
       "total_cost": 0.0
     },
@@ -47,7 +47,7 @@
       "reinforced_nodes": [
         "JKI V0422"
       ],
-      "performance": 257.18255,
+      "performance": 506.92755,
       "cost": 1,
       "total_cost": 1
     },
@@ -63,7 +63,7 @@
         "JKI V0411",
         "JKI V0422"
       ],
-      "performance": 258.446275,
+      "performance": 508.191275,
       "cost": 2,
       "total_cost": 2
     }
