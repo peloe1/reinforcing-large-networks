@@ -1,6 +1,8 @@
 import json
 from collections import defaultdict
 import os
+from result_handling import read_feasible_paths
+from path import intermediate_terminal_pairs
 
 # Updated parameters with your real stations
 SUBNETWORK_STATIONS = {
@@ -450,34 +452,67 @@ def read_travel_volumes(filename: str) -> dict[tuple[str, str], float]:
     
     return tuple_data
 
+def subnetwork_travel_volumes(subnetworks: list[str],
+                              travel_volumes: dict[tuple[str, str], float],
+                              intermediate_pairs: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]]
+                              ):
+    neighbour_subnetworks: dict[str, str] = {'krm': 'kuo',
+                                             'ohm': 'te',
+                                             'lui': 'jki'
+                                             }
+    
+    volumes: dict[str, dict[tuple[str, str], float]] = {subnetwork: {} for subnetwork in subnetworks}
+
+    for terminal_pair, f in travel_volumes.items():
+        u, v = terminal_pair
+        sorted_pair = sorted([u, v])
+        terminal_pair = (sorted_pair[0], sorted_pair[1])
+        pair_list, sub_path = intermediate_pairs[terminal_pair]
+        for pair, sub in zip(pair_list, sub_path):
+            if sub not in ['ohm', 'krm', 'lui']:
+                if pair not in volumes[sub]:
+                    volumes[sub][pair] = f
+                else:
+                    volumes[sub][pair] += f
+            else:
+                if pair not in volumes[neighbour_subnetworks[sub]]:
+                    volumes[neighbour_subnetworks[sub]][pair] = f
+                else:
+                    volumes[neighbour_subnetworks[sub]][pair] += f
+    output_subnetworks_dir = "model/parameters/subnetwork_volumes"
+    save_subnetwork_volumes(volumes, output_subnetworks_dir)
+
+
+
 # Example usage
 if __name__ == "__main__":
-    monthIndexes = ["0" + str(i) for i in range(1, 10)] + ["10", "11", "12"]
-    output_file = "data/travel_volumes/2024_volumes.json"
-    for month in monthIndexes:
-        inputs = []
-        outputs = []
-
-        for i in range(1, 31+1):
-            #outputs.append("data/travel_volumes/2024-" + month + "_volumes.json")
-            if i < 10:
-                inputs.append("data/juna_data/2024-" + month + "/2024-" + month + "-0" + str(i) + "_trains.json")
-                #outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-0"+ str(i) + "_trains.json")
-            else:
-                inputs.append("data/juna_data/2024-" + month + "/2024-" + month + "-" + str(i) + "_trains.json")
-                #outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-"+ str(i) + "_trains.json")
-        
-        #for input_file, output_file in zip(inputs, outputs):
-        for input_file in inputs:
-            # Check if input file exists
-            if not os.path.exists(input_file):
-                print(f"Error: Input file '{input_file}' does not exist.")
-            else:
-                # Process the data
-                frequencies = process_trains_from_file(input_file, output_file)
-                
-                print(f"\nProcessing complete!")
-                print(f"Input: {input_file}")
-                print(f"Output: {output_file}")
-                if frequencies:
-                    print(f"Total terminal pairs: {len(frequencies)}")
+    #monthIndexes = ["0" + str(i) for i in range(1, 10)] + ["10", "11", "12"]
+    #output_file = "data/travel_volumes/2024_volumes.json"
+    #for month in monthIndexes:
+    #    inputs = []
+    #    outputs = []
+#
+    #    for i in range(1, 31+1):
+    #        #outputs.append("data/travel_volumes/2024-" + month + "_volumes.json")
+    #        if i < 10:
+    #            inputs.append("data/juna_data/2024-" + month + "/2024-" + month + "-0" + str(i) + "_trains.json")
+    #            #outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-0"+ str(i) + "_trains.json")
+    #        else:
+    #            inputs.append("data/juna_data/2024-" + month + "/2024-" + month + "-" + str(i) + "_trains.json")
+    #            #outputs.append("data/travel_volumes/2024-" + month + "/2024-" + month + "-"+ str(i) + "_trains.json")
+    #    
+    #    #for input_file, output_file in zip(inputs, outputs):
+    #    for input_file in inputs:
+    #        # Check if input file exists
+    #        if not os.path.exists(input_file):
+    #            print(f"Error: Input file '{input_file}' does not exist.")
+    #        else:
+    #            # Process the data
+    #            frequencies = process_trains_from_file(input_file, output_file)
+    #            
+    #            print(f"\nProcessing complete!")
+    #            print(f"Input: {input_file}")
+    #            print(f"Output: {output_file}")
+    #            if frequencies:
+    #                print(f"Total terminal pairs: {len(frequencies)}")
+    print("Not meant to be run directly")

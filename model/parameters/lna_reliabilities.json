@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-13T15:52:52.178479",
+    "subnetwork": "lna",
+    "total_portfolios": 20,
+    "total_terminal_pairs": 3
+  },
+  "terminal_pair_reliabilities_by_portfolio": {
+    "0": {
+      "(APT V0002, TE V0001)": 0.9801,
+      "(LNA V0002, TE V0001)": 0.99,
+      "(APT V0002, LNA V0001)": 0.99
+    },
+    "4": {
+      "(APT V0002, TE V0001)": 0.98505,
+      "(LNA V0002, TE V0001)": 0.995,
+      "(APT V0002, LNA V0001)": 0.99
+    },
+    "6": {
+      "(APT V0002, TE V0001)": 0.990025,
+      "(LNA V0002, TE V0001)": 0.995,
+      "(APT V0002, LNA V0001)": 0.995
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-13T12:33:08.288302",
+    "subnetwork": "te",
+    "total_portfolios": 3,
+    "total_terminal_pairs": 0
+  },
+  "terminal_pair_reliabilities_by_portfolio": {
+    "0": {}
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-13T12:33:08.283459",
+    "subnetwork": "sij",
+    "total_portfolios": 38,
+    "total_terminal_pairs": 0
+  },
+  "terminal_pair_reliabilities_by_portfolio": {
+    "0": {}
+  }
+}

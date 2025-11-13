@@ -6,9 +6,9 @@ import random
 #from information_set import compute_extreme_points
 #from portfolio import generate_feasible_portfolios
 from subnetwork import cost_efficient_portfolios
-from path import terminal_pairs, feasible_paths, break_into_subnetwork_sequences
+from path import terminal_pairs, feasible_paths, intermediate_terminal_pairs
 from graph import construct_graph, add_reliabilities #generate_random_graph_with_positions 
-from travel_volumes import read_travel_volumes
+from travel_volumes import read_travel_volumes, subnetwork_travel_volumes
 from result_handling import *
 from hierarchical import cost_efficient_combined_portfolios
 
@@ -30,56 +30,59 @@ def main(verbose = False) -> None:
                           "te": ["OHM V0002", "LNA V0002", "TE V0001", "TE V0002"],
                           "toi": ["SIJ V0611", "SOR V0001", "TOI V0001", "TOI V0002"]}
     
-    path_partitions: dict[tuple[str, str], list[tuple[str, str]]] = {
-        ('KRM V0001|V0002', 'OHM V0002'): [('KRM V0001|V0002', 'SOR V0001'),
-                                           ('KUO V0002', 'TOI V0001'),
-                                           ('SIJ V0611', 'SOR V0001'),
-                                           ('APT V0001', 'TOI V0002'),
-                                           ('LNA V0001', 'SIJ V0632'),
-                                           
-                                           ]
-
+    subnetwork_transitions = {('krm', 'kuo'): ("KRM V0001|V0002", "KUO V0941"),
+                              ('kuo', 'sor'): ("KUO V0002", "SOR V0001"),
+                              ('krm', 'sor'): ("SOR V0001", "KRM V0001|V0002"),
+                              ('sor', 'toi'): ("TOI V0001", "SOR V0001"),
+                              ('kuo', 'toi'): ("TOI V0001", "KUO V0002"),
+                              ('toi', 'sij'): ("SIJ V0611", "TOI V0002"),
+                              ('sor', 'sij'): ("SIJ V0611", "SOR V0001"),
+                              ('toi', 'apt'): ("TOI V0002", "APT V0001"),
+                              ('toi', 'skm'): ("TOI V0002", "SKM V0271"),
+                              ('sij', 'apt'): ("APT V0001", "SIJ V0632"),
+                              ('sij', 'skm'): ("SIJ V0642", "SKM V0271"),
+                              ('sij', 'lna'): ("LNA V0001", "SIJ V0632"),
+                              ('apt', 'lna'): ("APT V0002", "LNA V0001"),
+                              ('apt', 'te'): ("APT V0002", "TE V0001"),
+                              ('lna', 'te'): ("LNA V0002", "TE V0001"),
+                              ('lna', 'ohm'): ("LNA V0002", "OHM V0002"),
+                              ('te', 'ohm'): ("OHM V0002", "TE V0002"),
+                              ('sij', 'knh'): ("KNH V0381", "SIJ V0642"),
+                              ('skm', 'knh'): ("KNH V0381", "SKM V0262"),
+                              ('skm', 'jki'): ("JKI V0411", "SKM V0262"),
+                              ('knh', 'jki'): ("KNH V0381", "JKI V0411"),
+                              ('knh', 'lui'): ("KNH V0381", "LUI V0511"),
+                              ('jki', 'lui'): ("JKI V0422", "LUI V0511"),
+                              ('skm', 'apt'): ("SKM V0271", "APT V0001")
     }
+
+    dict_transitions: dict[tuple[str, str], tuple[str, str]] = {}
+
+    for (sub1, sub2), (n1, n2) in subnetwork_transitions.items():
+        sorted_sub = sorted([sub1, sub2])
+        sorted_pair = sorted([n1, n2])
+        sub_pair = (sorted_sub[0], sorted_sub[1])
+        node_pair = (sorted_pair[0], sorted_pair[1])
+        dict_transitions[sub_pair] = node_pair
     
+    node_to_subnetwork: dict[str, str] = {}
+    
+    for subnetwork, nodes in all_terminal_nodes.items():
+        for node in nodes:
+            if node[:3].lower() == subnetwork or node[:2].lower() == subnetwork:
+                node_to_subnetwork[node] = subnetwork
+            elif node[:3].lower() == 'ohm' or node[:3].lower() == 'lui' or node[:3].lower() == 'krm':
+                node_to_subnetwork[node] = node[:3].lower()
+ 
     dict_Q_CE: dict[str, set[int]] = {}
     dict_portfolio_costs: dict[str, dict[int, list[float]]] = {}
     dict_reinforcement_actions: dict[str, list[tuple[str, float]]] = {}
     dict_reliabilities: dict[str, dict[int, dict[tuple[str, str], float]]] = {}
 
+    subnetwork_pairs: dict[str, list[tuple[str, str]]] = {}
+
     compute_paths = False
-    compute_subnetwork = False
-
-    terminal_nodes = set()
-    for _, terminal_nodelist in all_terminal_nodes.items():
-        for node in terminal_nodelist:
-            terminal_nodes.add(node)
-    
-    terminal_nodes = list(terminal_nodes)
-    terminal_node_pairs = terminal_pairs(terminal_nodes)
-
-    travel_volume_path = "data/travel_volumes/2024_volumes.json"
-    travel_volumes = read_travel_volumes(travel_volume_path)
-    
-    pairs_to_remove = []
-    for (u, v) in terminal_node_pairs:
-        if (u, v) not in travel_volumes:
-            if (u, v) in terminal_node_pairs:
-                pairs_to_remove.append((u, v))
-        if (v, u) not in travel_volumes:
-            if (v, u) in terminal_node_pairs:
-                pairs_to_remove.append((v, u))
-    
-    for pair in pairs_to_remove:
-        if pair in terminal_node_pairs:
-            terminal_node_pairs.remove(pair)    
-    
-    sequences = break_into_subnetwork_sequences(terminal_node_pairs, all_terminal_nodes)
-    for pair, sequence in sequences.items():
-        print("Terminal pair: ", pair, " corresponds to the sequence of intermediate terminal pairs: ", sequence)
-        print("\n")
-
-    return
-
+    compute_subnetwork = True
 
     if compute_subnetwork:
         for filename, subnetwork, travel_volume_path in zip(filenames, subnetworks, travel_volumes):
@@ -110,6 +113,8 @@ def main(verbose = False) -> None:
                 G = add_reliabilities(G, reliabilities)
                 
                 terminal_node_pairs = terminal_pairs(terminal_nodes)
+
+                subnetwork_pairs[subnetwork] = terminal_node_pairs
                 
                 if verbose:
                     print("Terminal node pairs: ", terminal_node_pairs)
@@ -173,7 +178,7 @@ def main(verbose = False) -> None:
                 dict_reinforcement_actions[subnetwork] = node_reinforcements
                 dict_reliabilities[subnetwork] = reliabilities
 
-                save_terminal_pair_reliabilities(subnetwork, reliabilities, f"model/parameters/{subnetwork}_reliabilities.json")
+                save_terminal_pair_reliabilities(subnetwork, Q_CE, reliabilities, f"model/parameters/{subnetwork}_reliabilities.json")
                 save_cost_efficient_portfolios(Q_CE, performances, portfolio_costs, node_reinforcements, filename="model/results/" + subnetwork + "_ce_portfolios.json")
     
     else:
@@ -215,21 +220,31 @@ def main(verbose = False) -> None:
     terminal_nodes = list(terminal_nodes)
     terminal_node_pairs = terminal_pairs(terminal_nodes)
 
-    travel_volume_path = "data/travel_volumes/2024_volumes.json"
+    travel_volume_path = "model/parameters/2024_volumes.json"
     travel_volumes = read_travel_volumes(travel_volume_path)
+
+    print("\nTerminal pairs in travel_volumes: ")
+    for pair in sorted(travel_volumes.keys()):
+        print(pair)
+
+    print("\n")
     
     pairs_to_remove = []
     for (u, v) in terminal_node_pairs:
-        if (u, v) not in travel_volumes:
-            if (u, v) in terminal_node_pairs:
-                pairs_to_remove.append((u, v))
-        if (v, u) not in travel_volumes:
-            if (v, u) in terminal_node_pairs:
-                pairs_to_remove.append((v, u))
+        if (u, v) not in travel_volumes and (v, u) not in travel_volumes:
+            pairs_to_remove.append((u, v))
     
-    for pair in pairs_to_remove:
+    for u, v in pairs_to_remove:
+        pair = (u, v)
         if pair in terminal_node_pairs:
-            terminal_node_pairs.remove(pair)    
+            if pair == ('OHM V0002', 'SOR V0003') or pair == ('SOR V0003', 'OHM V0002'):
+                print(f"Removed terminal pair: {pair}")
+            terminal_node_pairs.remove(pair)
+    print("\nTerminal node pairs: ")
+    for pair in sorted(terminal_node_pairs):
+        print(pair)
+
+    print("\n")
 
     combinations = 1
     for _, Q_CE_subnetwork in dict_Q_CE.items():
@@ -254,19 +269,31 @@ def main(verbose = False) -> None:
     else:
         path_list = read_feasible_paths("model/parameters/feasible_paths.json")
 
-    start = time.time()
+    
 
-    Q_star, combined_performances, combined_costs = cost_efficient_combined_portfolios(G,
-                                                                                    path_list,
-                                                                                    dict_reliabilities,
-                                                                                    travel_volumes, 
-                                                                                    dict_Q_CE, 
-                                                                                    subnetworks, 
-                                                                                    dict_reinforcement_actions, 
-                                                                                    dict_portfolio_costs, 
-                                                                                    budget, 
-                                                                                    len(subnetworks)
-                                                                                    )
+    # This now works 13.11.
+    partitioned_paths = intermediate_terminal_pairs(path_list, subnetwork_pairs, node_to_subnetwork, dict_transitions)
+    subnetwork_travel_volumes(subnetworks, travel_volumes, partitioned_paths)
+    #print(f"Partitioned paths: {partitioned_paths}")
+
+    print(f"Number of keys in partitioned paths: {len(partitioned_paths)}, which should match the number of terminal pairs {len(terminal_node_pairs)}")
+
+    #for (u, v), (path, sub_path) in partitioned_paths.items():
+    #    print(f"\nPair {(u, v)} corresponds to partitioned path:")
+    #    print(path)
+    #    print("with subnetwork path: ")
+    #    print(sub_path)
+
+    start = time.time()
+    Q_star, combined_performances, combined_costs = cost_efficient_combined_portfolios(partitioned_paths, 
+                                                                                       dict_reliabilities, 
+                                                                                       travel_volumes, 
+                                                                                       dict_Q_CE, 
+                                                                                       subnetworks, 
+                                                                                       dict_portfolio_costs, 
+                                                                                       budget, 
+                                                                                       len(subnetworks)
+                                                                                       )
     
     end = time.time()
     if end - start > 60:
@@ -275,7 +302,7 @@ def main(verbose = False) -> None:
         print(f"Time to compute cost-efficient combined portfolios: {(end - start):.2f} seconds")
 
     print(f"Number of resulting cost-efficient combined portfolios: {len(Q_star)}")
-    
+
     save_combined_portfolios(Q_star, 
                             combined_performances, 
                             combined_costs, 

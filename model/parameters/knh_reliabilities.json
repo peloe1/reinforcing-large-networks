@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-13T15:52:49.014723",
+    "subnetwork": "knh",
+    "total_portfolios": 6,
+    "total_terminal_pairs": 1
+  },
+  "terminal_pair_reliabilities_by_portfolio": {
+    "0": {
+      "(JKI V0411, SKM V0262)": 0.99
+    },
+    "4": {
+      "(JKI V0411, SKM V0262)": 0.995
+    }
+  }
+}

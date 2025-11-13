@@ -75,7 +75,7 @@ def find_path_between_stations(start: str, end: str, topology: Dict) -> List[str
                 visited.add(neighbor)
                 queue.append((neighbor, path + [neighbor]))
     
-    return None  # No path found (shouldn't happen in our connected network)
+    return []  # No path found (shouldn't happen in our connected network)
 
 def filter_trains_by_stations(trains_data: List[Dict], target_stations: List[str]) -> List[Dict]:
     """

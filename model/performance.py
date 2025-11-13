@@ -55,3 +55,30 @@ def expected_travel(G: nx.Graph,
     expectation: float = sum(travel_volumes[terminal_pair] * reliabilities[terminal_pair] for terminal_pair, path_set in all_paths.items())
 
     return expectation, reliabilities
+
+def expected_travel_hierarchical(Q: list[int],
+                                 partitioned_paths: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]], 
+                                 terminal_pair_reliabilities: dict[str, dict[int, dict[tuple[str, str], float]]], 
+                                 travel_volumes: dict[tuple[str, str], float]) -> float:
+    
+    neighbour_subnetworks: dict[str, str] = {'krm': 'kuo',
+                                             'ohm': 'te',
+                                             'lui': 'jki'
+                                             }
+    expectation: float = 0.0
+    for terminal_pair, (path, sub_path) in partitioned_paths.items():
+        reliability: float = 1.0
+        for subnetwork, intermediate_pair, q in zip(sub_path, path, Q):
+            if subnetwork not in ['ohm', 'krm', 'lui']:
+                reliability_dict = terminal_pair_reliabilities[subnetwork][q]
+                if intermediate_pair in reliability_dict:
+                    reliability *= reliability_dict[intermediate_pair]
+                else:
+                    print(f"Looking at terminal pair {terminal_pair}")
+                    print(f"The intermediate pair {intermediate_pair} is not in terminal pair reliabilities")
+            else:
+                reliability *= terminal_pair_reliabilities[neighbour_subnetworks[subnetwork]][q][intermediate_pair]
+        
+        expectation += reliability * travel_volumes[terminal_pair]
+
+    return expectation

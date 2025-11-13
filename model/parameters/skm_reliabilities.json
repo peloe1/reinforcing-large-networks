@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-13T15:52:52.433563",
+    "subnetwork": "skm",
+    "total_portfolios": 9,
+    "total_terminal_pairs": 3
+  },
+  "terminal_pair_reliabilities_by_portfolio": {
+    "0": {
+      "(KNH V0381, SIJ V0642)": 0.9801,
+      "(SIJ V0642, SKM V0271)": 0.99,
+      "(KNH V0381, SKM V0262)": 0.99
+    },
+    "4": {
+      "(KNH V0381, SIJ V0642)": 0.98505,
+      "(SIJ V0642, SKM V0271)": 0.995,
+      "(KNH V0381, SKM V0262)": 0.99
+    },
+    "5": {
+      "(KNH V0381, SIJ V0642)": 0.990025,
+      "(SIJ V0642, SKM V0271)": 0.995,
+      "(KNH V0381, SKM V0262)": 0.995
+    }
+  }
+}

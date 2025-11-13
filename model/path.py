@@ -19,10 +19,13 @@ def terminal_pairs(terminal_nodes: list[str]) -> list[tuple[str, str]]:
     """
 
     pairs: list[tuple[str, str]] = []
-    for i, u in enumerate(terminal_nodes):
+    for u in terminal_nodes:
         for v in terminal_nodes:#[i+1:]:
             if u != v:
-                pairs.append((u, v))
+                sorted_pair = sorted([u, v])
+                pair = (sorted_pair[0], sorted_pair[1])
+                if pair not in pairs:
+                    pairs.append(pair)
     
     return pairs
 
@@ -252,76 +255,74 @@ def is_path_feasible(detailed_path: list[str], G: nx.Graph, max_turn_angle: floa
             
     return True
 
-def create_subnetwork_connectivity_graph(all_terminal_nodes: dict[str, list[str]]) -> nx.Graph:
-    """Create a graph where nodes are subnetworks and edges represent connections."""
-    G = nx.Graph()
+def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]], 
+                                subnetwork_pairs: dict[str, list[tuple[str, str]]],
+                                node_to_subnetwork: dict[str, str],
+                                transitions: dict[tuple[str, str], tuple[str, str]],
+                                verbose=True
+                               ) -> dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]]:
     
-    # Add all subnetworks as nodes
-    for _, terminal_nodes in all_terminal_nodes.items():
-        for node in terminal_nodes:
-            G.add_node(node)
-    
-    # Find connections between subnetworks by looking at shared terminal nodes
-    for _, nodes1 in all_terminal_nodes.items():
-        for _, nodes2 in all_terminal_nodes.items():
-            shared_connections = list(set(nodes1).intersection(set(nodes2)))
-            print("Number of shared nodes: ", len(shared_connections))
-            print("Shared nodes: ", shared_connections)
-            
-            for n1 in shared_connections:
-                for n2 in shared_connections:
-                    if n1 != n2:
-                        G.add_edge(n1, n2)
-    
-    return G
+    result: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]] = {}
+    all_terminal_nodes = set()
+    for _, pairs in subnetwork_pairs.items():
+        for (u, v) in pairs:
+            all_terminal_nodes.add(u)
+            all_terminal_nodes.add(v)
 
-def find_subnetwork_path(source_sub: str, target_sub: str, connectivity_graph: nx.Graph) -> list[str]:
-    """Find the shortest path between two subnetworks."""
-    try:
-        return nx.shortest_path(connectivity_graph, source_sub, target_sub)
-    except nx.NetworkXNoPath:
-        return []
+    print("Pair OHM SOR is in all_paths: ", ('OHM V0002', 'SOR V0003') in all_paths)
 
-def break_into_subnetwork_sequences(terminal_pairs: list[tuple[str, str]], 
-                                    all_terminal_nodes: dict[str, list[str]]
-                                   ) -> dict[tuple[str, str], list[tuple[str, str]]]:
-    """
-    Break terminal pairs into sequences where each pair belongs to one subnetwork.
-    Returns a dictionary mapping original pairs to lists of subnetwork-specific paths.
-    """
-    
-    # Create connectivity graph
-    connectivity_graph = create_subnetwork_connectivity_graph(all_terminal_nodes)
-    print("Number of nodes in connectivity graph: ", len(connectivity_graph.nodes()))
-    print("Number of edges in connectivity graph: ", len(connectivity_graph.edges()))
-    print(sorted(connectivity_graph.nodes()))
-    print("Graph is connected: ", is_connected(connectivity_graph))
-    
-    result = {}
-    
-    for source, target in terminal_pairs:
-        # Different subnetworks - need to find path through intermediate subnetworks
-        path = find_subnetwork_path(source, target, connectivity_graph)
-        
-        if path:
-            sequence = []
-            current = source
+    for pair, path_set in all_paths.items():
+        u, v = pair
+        sorted_pair = sorted([u, v])
+        pair = (sorted_pair[0], sorted_pair[1])
+        if pair not in result:
+            path = path_set[0]
+
+            subnetwork_path: list[str] = []
+
+            for n in path:
+                if n not in all_terminal_nodes:
+                    continue
+
+                sub = node_to_subnetwork[n]
+                if sub not in subnetwork_path:
+                    subnetwork_path.append(sub)
+
+            if len(subnetwork_path) == 1:
+                print("WTF HAPPENED")
+                return {}
             
-            for i in range(len(path) - 1):
-                next = path[i + 1]
-                sequence.append((current, next))
-                current = next
+            if verbose:
+                print(f"Pair: {pair}: {subnetwork_path}")
+
+            sequence: list[tuple[str, str]] = []
+
+            sub1 = subnetwork_path[0]
+            sub2 = subnetwork_path[1]
+            sorted_sub = sorted([sub1, sub2])
+            sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
+            print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
             
-            result[(source, target)] = {
-                'path': sequence,
-            }
-        else:
-            # No path found
-            result[(source, target)] = {
-                'path': [],
-                'error': 'No path between subnetworks'
-            }
-    
+            prev = 0
+            for next in range(2, len(subnetwork_path)):
+                sub1 = subnetwork_path[prev]
+                sub2 = subnetwork_path[next]
+                sorted_sub = sorted([sub1, sub2])
+                sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
+                print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
+                prev += 1
+
+            if len(subnetwork_path) > 2:
+                sub1 = subnetwork_path[-2]
+                sub2 = subnetwork_path[-1]
+                sorted_sub = sorted([sub1, sub2])
+                sequence.append(transitions[(sorted_sub[0], sorted_sub[1])])
+                print(f"Transition {sub1} -> {sub2} corresponds to pair {transitions[(sorted_sub[0], sorted_sub[1])]}")
+
+            result[pair] = (sequence, subnetwork_path)
+
+            print("\n")
+
     return result
 
 if __name__ == '__main__':
@@ -351,3 +352,10 @@ if __name__ == '__main__':
         print(f"Pair ({u}, {v}): {len(paths)} feasible paths")
         for path in paths:
             print(f"  Path: {path} \n")
+
+
+#for (u, v), (path, sub_path) in partitioned_paths.items():
+#        print(f"\nPair {(u, v)} corresponds to partitioned path:")
+#        print(path)
+#        print("with subnetwork path: ")
+#        print(sub_path)

@@ -101,4 +101,4 @@ def cost_efficient_portfolios(G: nx.Graph,
         end = time.time()
         print(f"Time for iteration {l+1}: {(end - start):.2f} seconds.")
 
-    return Q, performances, portfolio_costs, reliabilities
+    return Q, performances, portfolio_costs, terminal_pair_reliabilities
