@@ -81,8 +81,7 @@ def expected_travel_hierarchical(Q: list[int],
         reliability: float = 1.0
 
         if len(path) != len(sub_path):
-            # This must be either KRM -> KUO, LUI -> JKI or OHM -> TE
-            #print(f"The lengths of path {path} and sub_path {sub_path} don't match")
+            # This must be either KRM <-> KUO, LUI <-> JKI or OHM <-> TE
             intermediate_pair = path[0]
             subnetwork = sub_path[0]
             q = Q[subnetworks.index(subnetwork_map[subnetwork])]

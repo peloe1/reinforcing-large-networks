@@ -75,7 +75,7 @@ def main(verbose = False) -> None:
     budget = [40.0]
 
     
-    compute_subnetwork = True
+    compute_subnetwork = False
 
     if compute_subnetwork:
         for filename, subnetwork, travel_volume_path in zip(filenames, subnetworks, travel_volumes):
@@ -271,32 +271,37 @@ def main(verbose = False) -> None:
     #    print(path)
     #    print("with subnetwork path: ")
     #    print(sub_path)
-
-    start = time.time()
-    Q_star, combined_performances, combined_costs = cost_efficient_combined_portfolios(partitioned_paths, 
-                                                                                       dict_reliabilities, 
-                                                                                       travel_volumes, 
-                                                                                       dict_Q_CE, 
-                                                                                       subnetworks, 
-                                                                                       dict_portfolio_costs, 
-                                                                                       budget, 
-                                                                                       len(subnetworks)
-                                                                                       )
-    
-    end = time.time()
-    if end - start > 60:
-        print(f"Time to compute cost-efficient combined portfolios: {(end - start)/60:.2f} minutes")
-    else:
-        print(f"Time to compute cost-efficient combined portfolios: {(end - start):.2f} seconds")
-
-    print(f"Number of resulting cost-efficient combined portfolios: {len(Q_star)}")
-
-    save_combined_portfolios(Q_star, 
+    compute_hierarchical = False
+    if compute_hierarchical:
+        start = time.time()
+        Q_star, combined_performances, combined_costs = cost_efficient_combined_portfolios(partitioned_paths, 
+                                                                                        dict_reliabilities, 
+                                                                                        travel_volumes, 
+                                                                                        dict_Q_CE, 
+                                                                                        subnetworks, 
+                                                                                        dict_portfolio_costs, 
+                                                                                        budget, 
+                                                                                        len(subnetworks)
+                                                                                        )
+        
+        end = time.time()
+        if end - start > 60:
+            print(f"Time to compute cost-efficient combined portfolios: {(end - start)/60:.2f} minutes")
+        else:
+            print(f"Time to compute cost-efficient combined portfolios: {(end - start):.2f} seconds")
+        
+        save_combined_portfolios(Q_star, 
                             combined_performances, 
                             combined_costs, 
                             dict_reinforcement_actions, 
                             subnetworks, 
                             filename="model/results/whole_network_ce_portfolios.json")
+    else:
+        Q_star, combined_performances, combined_costs, _, _ = read_combined_portfolios("model/results/whole_network_ce_portfolios.json")
+
+    print(f"Number of resulting cost-efficient combined portfolios: {len(Q_star)}")
+    
+    
     
 if __name__ == "__main__":
     main(verbose = True)

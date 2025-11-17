@@ -255,19 +255,13 @@ def is_path_feasible(detailed_path: list[str], G: nx.Graph, max_turn_angle: floa
             
     return True
 
-def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]], 
-                                #subnetwork_pairs: dict[str, list[tuple[str, str]]],
+def intermediate_terminal_pairs(all_paths: dict[tuple[str, str], list[list[str]]],
                                 node_to_subnetwork: dict[str, str],
                                 transitions: dict[tuple[str, str], tuple[str, str]],
                                 verbose=False
                                ) -> dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]]:
     
     result: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]] = {}
-    #all_terminal_nodes = set()
-    #for _, pairs in subnetwork_pairs.items():
-    #    for (u, v) in pairs:
-    #        all_terminal_nodes.add(u)
-    #        all_terminal_nodes.add(v)
 
     for pair, path_set in all_paths.items():
         u, v = pair
