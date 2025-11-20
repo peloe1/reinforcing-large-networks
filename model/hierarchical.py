@@ -58,11 +58,11 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
                     ## Step 6        
                     combined_performances[tuple(Q_copy)] = expected_travel_hierarchical(Q_copy, subnetworks, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
         # Step 7
-        dominated = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q1], combined_costs[Q2]) for Q2 in Q_star), Q_j))
+        dominated = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q2], combined_costs[Q1]) for Q2 in Q_star), Q_j))
         Q_j = Q_j.difference(dominated)
 
         # Step 8
-        dominated_previous = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q1], combined_costs[Q2]) for Q2 in Q_j), Q_star))
+        dominated_previous = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q2], combined_costs[Q1]) for Q2 in Q_j), Q_star))
         Q_star = Q_star.difference(dominated_previous)
 
         # Step 9
@@ -74,7 +74,9 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
         end = time.time()
         print(f"Time for iteration {j+1}: {(end - start):.2f} seconds.")
         print("Number of non-dominated portfolios: ", len(Q_star))
-        
+    
+    dominated = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q2], combined_costs[Q1]) for Q2 in Q_star), Q_star))
+    Q_star = Q_star.difference(dominated)
     # Step 11 and 12
     return Q_star, combined_performances, combined_costs
 

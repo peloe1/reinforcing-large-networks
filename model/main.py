@@ -2,6 +2,7 @@ import networkx as nx
 import time
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 #from information_set import compute_extreme_points
 #from portfolio import generate_feasible_portfolios
@@ -72,9 +73,8 @@ def main(verbose = False) -> None:
 
     subnetwork_pairs: dict[str, list[tuple[str, str]]] = {}
 
-    budget = [40.0]
+    budget = [60.0]
 
-    
     compute_subnetwork = False
 
     if compute_subnetwork:
@@ -107,7 +107,7 @@ def main(verbose = False) -> None:
                 travel_volumes = read_travel_volumes(travel_volume_path)
                 
                 #terminal_node_pairs = terminal_pairs(terminal_nodes)
-                terminal_node_pairs: list[tuple[str, str]] = travel_volumes.keys()
+                terminal_node_pairs: list[tuple[str, str]] = list(travel_volumes.keys())
 
                 subnetwork_pairs[subnetwork] = terminal_node_pairs
                 
@@ -214,7 +214,7 @@ def main(verbose = False) -> None:
 
     terminal_nodes = list(terminal_nodes)
     #terminal_node_pairs = terminal_pairs(terminal_nodes)
-    terminal_node_pairs: list[tuple[str, str]] = travel_volumes.keys()
+    terminal_node_pairs: list[tuple[str, str]] = list(travel_volumes.keys())
 
     combinations = 1
     for _, Q_CE_subnetwork in dict_Q_CE.items():
@@ -301,6 +301,32 @@ def main(verbose = False) -> None:
 
     print(f"Number of resulting cost-efficient combined portfolios: {len(Q_star)}")
     
+    budget_levels = {i: [] for i in range(int(budget[0]) + 1)}
+    x: list[int] = list(range(int(budget[0]) + 1))
+    y: list[int] = [0 for _ in range(int(budget[0]) + 1)]
+    cost_list: list[float] = []
+    perf_list: list[float] = []
+
+    full_budget = set()
+    for Q in Q_star:
+        cost: int = int(combined_costs[Q][0])
+
+        cost_list.append(combined_costs[Q][0])
+        perf_list.append(combined_performances[Q])
+
+        budget_levels[cost].append(Q)
+        y[cost] += 1
+
+        if combined_costs[Q] == budget:
+            full_budget.add(Q)
+
+    print("Number of combined portfolios, which utilize the full budget", len(full_budget))
+
+    plt.scatter(x, y)
+    plt.title("")
+    plt.show()
+
+
     
     
 if __name__ == "__main__":
