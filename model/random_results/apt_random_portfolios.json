@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:04.948687",
+    "generated_at": "2025-12-01T14:30:20.302252",
     "total_portfolios": 4,
     "number_of_actions": 6
   },
@@ -47,9 +47,9 @@
       "total_cost": 0.0
     },
     {
-      "portfolio_id": 6,
+      "portfolio_id": 7,
       "binary_vector": [
-        0,
+        1,
         1,
         1,
         0,
@@ -57,29 +57,32 @@
         0
       ],
       "reinforced_nodes": [
+        "APT V0001",
         "APT V0002",
         "APT V0003"
       ],
-      "performance": 10692.15535,
-      "cost": 2,
-      "total_cost": 2
+      "performance": 10736.512675000002,
+      "cost": 3,
+      "total_cost": 3
     },
     {
-      "portfolio_id": 8,
+      "portfolio_id": 11,
       "binary_vector": [
-        0,
-        0,
+        1,
+        1,
         0,
         1,
         0,
         0
       ],
       "reinforced_nodes": [
+        "APT V0001",
+        "APT V0002",
         "APT V0004"
       ],
-      "performance": 10638.4707,
-      "cost": 1,
-      "total_cost": 1
+      "performance": 10736.512675000002,
+      "cost": 3,
+      "total_cost": 3
     },
     {
       "portfolio_id": 19,

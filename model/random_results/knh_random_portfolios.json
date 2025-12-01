@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:04.971687",
+    "generated_at": "2025-12-01T14:30:20.320699",
     "total_portfolios": 4,
     "number_of_actions": 4
   },
@@ -39,6 +39,21 @@
       "total_cost": 1
     },
     {
+      "portfolio_id": 2,
+      "binary_vector": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "reinforced_nodes": [
+        "KNH Puskin|V0382"
+      ],
+      "performance": 251.46,
+      "cost": 1,
+      "total_cost": 1
+    },
+    {
       "portfolio_id": 4,
       "binary_vector": [
         0,
@@ -50,21 +65,6 @@
         "KNH V0381"
       ],
       "performance": 252.73,
-      "cost": 1,
-      "total_cost": 1
-    },
-    {
-      "portfolio_id": 8,
-      "binary_vector": [
-        0,
-        0,
-        0,
-        1
-      ],
-      "reinforced_nodes": [
-        "KNH V0382"
-      ],
-      "performance": 251.46,
       "cost": 1,
       "total_cost": 1
     },

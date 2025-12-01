@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 
-def plot_pareto_frontier(costs: list[float], performances: list[float], random_costs: list[float] = None, random_performances: list[float] = None, sub_network=None, normalize=False):
+def plot_pareto_frontier(costs: list[float], performances: list[float], random_costs = None, random_performances = None, sub_network=None, normalize=False):
     #plt.scatter(x=costs, y=performances, c='black', s=3, marker='o')
     
     
@@ -108,7 +108,7 @@ if __name__ == "__main__":
             costs.append(combined_costs[Q])
             performances.append(combined_performances[Q])
 
-        seen: set[tuple[tuple[int, ...], int]] = set()
+        seen: set[tuple[tuple[float, ...], float]] = set()
 
         random_costs = []
         random_performances = []

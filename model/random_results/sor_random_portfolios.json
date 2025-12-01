@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:11.103161",
+    "generated_at": "2025-12-01T14:30:24.799281",
     "total_portfolios": 4,
     "number_of_actions": 4
   },
@@ -23,19 +23,6 @@
     ]
   ],
   "cost_efficient_portfolios": [
-    {
-      "portfolio_id": 0,
-      "binary_vector": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "reinforced_nodes": [],
-      "performance": 10895.940000000002,
-      "cost": 0.0,
-      "total_cost": 0.0
-    },
     {
       "portfolio_id": 2,
       "binary_vector": [
@@ -63,6 +50,21 @@
         "SOR V0001"
       ],
       "performance": 10950.97,
+      "cost": 1,
+      "total_cost": 1
+    },
+    {
+      "portfolio_id": 8,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "reinforced_nodes": [
+        "SOR V0003"
+      ],
+      "performance": 10895.940000000002,
       "cost": 1,
       "total_cost": 1
     },
