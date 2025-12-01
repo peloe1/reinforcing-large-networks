@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:04.964688",
-    "total_portfolios": 3,
+    "generated_at": "2025-11-28T17:56:04.963687",
+    "total_portfolios": 4,
     "number_of_actions": 4
   },
   "node_reinforcements": [
@@ -37,35 +37,51 @@
       "total_cost": 0.0
     },
     {
-      "portfolio_id": 4,
+      "portfolio_id": 1,
       "binary_vector": [
-        0,
-        0,
         1,
+        0,
+        0,
         0
       ],
       "reinforced_nodes": [
-        "JKI V0422"
+        "JKI V0411"
       ],
-      "performance": 506.92755,
+      "performance": 505.65255,
       "cost": 1,
       "total_cost": 1
     },
     {
-      "portfolio_id": 5,
+      "portfolio_id": 8,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "reinforced_nodes": [
+        "JKI V0424"
+      ],
+      "performance": 504.3951,
+      "cost": 1,
+      "total_cost": 1
+    },
+    {
+      "portfolio_id": 13,
       "binary_vector": [
         1,
         0,
         1,
-        0
+        1
       ],
       "reinforced_nodes": [
         "JKI V0411",
-        "JKI V0422"
+        "JKI V0422",
+        "JKI V0424"
       ],
       "performance": 508.191275,
-      "cost": 2,
-      "total_cost": 2
+      "cost": 3,
+      "total_cost": 3
     }
   ]
 }

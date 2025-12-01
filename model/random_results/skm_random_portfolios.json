@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:11.096161",
-    "total_portfolios": 3,
+    "generated_at": "2025-11-28T17:56:11.095161",
+    "total_portfolios": 4,
     "number_of_actions": 4
   },
   "node_reinforcements": [
@@ -24,48 +24,67 @@
   ],
   "cost_efficient_portfolios": [
     {
-      "portfolio_id": 0,
+      "portfolio_id": 1,
       "binary_vector": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "reinforced_nodes": [],
-      "performance": 768.7152,
-      "cost": 0.0,
-      "total_cost": 0.0
-    },
-    {
-      "portfolio_id": 4,
-      "binary_vector": [
-        0,
-        0,
         1,
+        0,
+        0,
         0
       ],
       "reinforced_nodes": [
-        "SKM V0271"
+        "SKM V0262"
       ],
-      "performance": 772.5876000000001,
+      "performance": 769.9726,
       "cost": 1,
       "total_cost": 1
     },
     {
-      "portfolio_id": 5,
+      "portfolio_id": 8,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "reinforced_nodes": [
+        "SKM V0273"
+      ],
+      "performance": 768.7152,
+      "cost": 1,
+      "total_cost": 1
+    },
+    {
+      "portfolio_id": 12,
+      "binary_vector": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "reinforced_nodes": [
+        "SKM V0271",
+        "SKM V0273"
+      ],
+      "performance": 772.5876000000001,
+      "cost": 2,
+      "total_cost": 2
+    },
+    {
+      "portfolio_id": 13,
       "binary_vector": [
         1,
         0,
         1,
-        0
+        1
       ],
       "reinforced_nodes": [
         "SKM V0262",
-        "SKM V0271"
+        "SKM V0271",
+        "SKM V0273"
       ],
       "performance": 773.8513,
-      "cost": 2,
-      "total_cost": 2
+      "cost": 3,
+      "total_cost": 3
     }
   ]
 }

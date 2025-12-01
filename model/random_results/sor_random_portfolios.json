@@ -1,24 +1,24 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:11.096161",
-    "total_portfolios": 3,
+    "generated_at": "2025-11-28T17:56:11.103161",
+    "total_portfolios": 4,
     "number_of_actions": 4
   },
   "node_reinforcements": [
     [
-      "SKM V0262",
+      "616|SOR Päätepiste|V0003|V0005",
       0.995
     ],
     [
-      "SKM V0264",
+      "SOR Puskin|V0003",
       0.995
     ],
     [
-      "SKM V0271",
+      "SOR V0001",
       0.995
     ],
     [
-      "SKM V0273",
+      "SOR V0003",
       0.995
     ]
   ],
@@ -32,9 +32,24 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 768.7152,
+      "performance": 10895.940000000002,
       "cost": 0.0,
       "total_cost": 0.0
+    },
+    {
+      "portfolio_id": 2,
+      "binary_vector": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "reinforced_nodes": [
+        "SOR Puskin|V0003"
+      ],
+      "performance": 10895.940000000002,
+      "cost": 1,
+      "total_cost": 1
     },
     {
       "portfolio_id": 4,
@@ -45,25 +60,25 @@
         0
       ],
       "reinforced_nodes": [
-        "SKM V0271"
+        "SOR V0001"
       ],
-      "performance": 772.5876000000001,
+      "performance": 10950.97,
       "cost": 1,
       "total_cost": 1
     },
     {
-      "portfolio_id": 5,
+      "portfolio_id": 12,
       "binary_vector": [
-        1,
+        0,
         0,
         1,
-        0
+        1
       ],
       "reinforced_nodes": [
-        "SKM V0262",
-        "SKM V0271"
+        "SOR V0001",
+        "SOR V0003"
       ],
-      "performance": 773.8513,
+      "performance": 10950.97,
       "cost": 2,
       "total_cost": 2
     }

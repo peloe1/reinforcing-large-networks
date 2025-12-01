@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "generated_at": "2025-11-28T17:56:10.590156",
-    "total_portfolios": 3,
+    "generated_at": "2025-11-28T17:56:10.589159",
+    "total_portfolios": 4,
     "number_of_actions": 8
   },
   "node_reinforcements": [
@@ -40,23 +40,6 @@
   ],
   "cost_efficient_portfolios": [
     {
-      "portfolio_id": 0,
-      "binary_vector": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "reinforced_nodes": [],
-      "performance": 10753.231499999998,
-      "cost": 0.0,
-      "total_cost": 0.0
-    },
-    {
       "portfolio_id": 4,
       "binary_vector": [
         0,
@@ -94,6 +77,46 @@
       "performance": 10860.847875,
       "cost": 2,
       "total_cost": 2
+    },
+    {
+      "portfolio_id": 70,
+      "binary_vector": [
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "reinforced_nodes": [
+        "LNA V0001",
+        "LNA V0002",
+        "LNA V0006"
+      ],
+      "performance": 10860.847875,
+      "cost": 3,
+      "total_cost": 3
+    },
+    {
+      "portfolio_id": 128,
+      "binary_vector": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "reinforced_nodes": [
+        "LNA V0007"
+      ],
+      "performance": 10753.231499999998,
+      "cost": 1,
+      "total_cost": 1
     }
   ]
 }

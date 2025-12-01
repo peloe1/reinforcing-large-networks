@@ -11,7 +11,7 @@ from path import terminal_pairs, feasible_paths, intermediate_terminal_pairs
 from graph import construct_graph, add_reliabilities #generate_random_graph_with_positions 
 from travel_volumes import read_travel_volumes, subnetwork_travel_volumes
 from result_handling import *
-from hierarchical import cost_efficient_combined_portfolios
+from hierarchical import cost_efficient_combined_portfolios, random_portfolios
 
 
 
@@ -71,11 +71,16 @@ def main(verbose = False) -> None:
     dict_reinforcement_actions: dict[str, list[tuple[str, float]]] = {}
     dict_reliabilities: dict[str, dict[int, dict[tuple[str, str], float]]] = {}
 
+    dict_Q_random: dict[str, set[int]] = {}
+    dict_costs_random: dict[str, dict[int, list[float]]] = {}
+
     subnetwork_pairs: dict[str, list[tuple[str, str]]] = {}
 
-    budget = [60.0]
+    budget = [45.0]
 
-    compute_subnetwork = False
+    compute_subnetwork = True
+    compute_random = True
+
 
     if compute_subnetwork:
         for filename, subnetwork, travel_volume_path in zip(filenames, subnetworks, travel_volumes):
@@ -166,6 +171,24 @@ def main(verbose = False) -> None:
 
                 print(f"Number of resulting cost-efficient portfolios for subnetwork {subnetwork.upper()}: {len(Q_CE)}")
 
+                if compute_random:
+                    dominated_performances = {}
+                    dominated_costs = {}
+                    dominated_portfolios = []
+                    for q, p in performances.items():
+                        #if q not in Q_CE:
+                        dominated_portfolios.append(q)
+                        dominated_performances[q] = p
+                        dominated_costs[q] = portfolio_costs[q]
+                    
+                    k = min(4, len(dominated_portfolios))
+
+                    random_sample = set(random.sample(dominated_portfolios, k))
+                    save_cost_efficient_portfolios(random_sample, dominated_performances, dominated_costs, node_reinforcements, filename="model/random_results/" + subnetwork + "_random_portfolios.json")
+                    dict_Q_random[subnetwork] = random_sample
+                    dict_costs_random[subnetwork] = dominated_costs
+
+
                 dict_Q_CE[subnetwork] = Q_CE
                 dict_portfolio_costs[subnetwork] = portfolio_costs
                 dict_reinforcement_actions[subnetwork] = node_reinforcements
@@ -183,6 +206,12 @@ def main(verbose = False) -> None:
             dict_portfolio_costs[subnetwork] = portfolio_costs
             dict_reinforcement_actions[subnetwork] = node_reinforcements
             dict_reliabilities[subnetwork] = reliabilities
+
+
+            q_random, _, costs_random, _ = read_cost_efficient_portfolios("model/random_results/" + subnetwork + "_random_portfolios.json")
+            dict_Q_random[subnetwork] = q_random
+            dict_costs_random[subnetwork] = costs_random
+
 
     filename = "data/network/dipan_data/@network.json"
     G, G_original = construct_graph(filename)
@@ -301,30 +330,21 @@ def main(verbose = False) -> None:
 
     print(f"Number of resulting cost-efficient combined portfolios: {len(Q_star)}")
     
-    budget_levels = {i: [] for i in range(int(budget[0]) + 1)}
-    x: list[int] = list(range(int(budget[0]) + 1))
-    y: list[int] = [0 for _ in range(int(budget[0]) + 1)]
-    cost_list: list[float] = []
-    perf_list: list[float] = []
+    if compute_random:
+        portfolios_random, random_performances, random_costs = random_portfolios(partitioned_paths, 
+                                                                                    dict_reliabilities, 
+                                                                                    travel_volumes, 
+                                                                                    dict_Q_random,
+                                                                                    subnetworks, 
+                                                                                    dict_costs_random,
+                                                                                    budget, 
+                                                                                    len(subnetworks)
+                                                                                    )
+        
+        save_combined_portfolios(portfolios_random, random_performances, random_costs, dict_reinforcement_actions, subnetworks, filename="model/random_results/combined_portfolios.json")
 
-    full_budget = set()
-    for Q in Q_star:
-        cost: int = int(combined_costs[Q][0])
 
-        cost_list.append(combined_costs[Q][0])
-        perf_list.append(combined_performances[Q])
 
-        budget_levels[cost].append(Q)
-        y[cost] += 1
-
-        if combined_costs[Q] == budget:
-            full_budget.add(Q)
-
-    print("Number of combined portfolios, which utilize the full budget", len(full_budget))
-
-    plt.scatter(x, y)
-    plt.title("")
-    plt.show()
 
 
     
