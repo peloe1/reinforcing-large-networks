@@ -429,3 +429,255 @@ def read_terminal_pair_reliabilities(filename: str) -> tuple[str, dict[int, dict
     except Exception as e:
         print(f"❌ Error reading {filename}: {str(e)}")
         return '', {}
+    
+def save_combined_portfolio_reliabilities(Q: set[tuple[int, ...]], 
+                                          reliabilities: dict[tuple[int, ...], dict[tuple[str, str], float]], 
+                                          filename: str) -> str:
+    """
+    Save terminal pair reliabilities for combined portfolios to a JSON file.
+    
+    Parameters:
+        Q: Set of combined portfolio tuples (e.g., (1, 2, 3) for combined portfolios 1,2,3)
+        reliabilities: Dictionary mapping combined portfolio tuples to dictionaries of terminal pair reliabilities
+        filename: Output filename
+        
+    Returns:
+        str: Path to the saved file
+    """
+    
+    # Prepare the data for JSON serialization
+    output_data = {
+        'metadata': {
+            'generated_at': datetime.now().isoformat(),
+            'total_combined_portfolios': len(reliabilities),
+            'total_terminal_pairs': len(next(iter(reliabilities.values()))) if reliabilities else 0
+        },
+        'terminal_pair_reliabilities_by_combined_portfolio': {}
+    }
+    
+    # Convert the nested structure for JSON serialization
+    for portfolio_tuple in sorted(Q, key=lambda x: (len(x), x)):
+        pair_reliabilities = reliabilities[portfolio_tuple]
+        
+        # Convert tuple key to string representation
+        portfolio_key = str(portfolio_tuple)
+        
+        output_data['terminal_pair_reliabilities_by_combined_portfolio'][portfolio_key] = {}
+        
+        # Convert terminal pair tuple keys to string keys for JSON serialization
+        for (source, target), reliability in pair_reliabilities.items():
+            key_str = f"('{source}', '{target}')"
+            output_data['terminal_pair_reliabilities_by_combined_portfolio'][portfolio_key][key_str] = reliability
+    
+    # Write to JSON file
+    with open(filename, 'w', encoding='utf-8') as file:
+        json.dump(output_data, file, indent=2, ensure_ascii=False)
+    
+    print(f"✅ Saved {len(reliabilities)} combined portfolio reliabilities to {filename}")
+    return filename
+def read_combined_portfolio_reliabilities(filename: str) -> dict[tuple[int, ...], dict[tuple[str, str], float]]:
+    """
+    Read terminal pair reliabilities for combined portfolios from a JSON file.
+    
+    Parameters:
+        filename: Input filename
+        
+    Returns:
+        reliabilities_dict: Dictionary mapping combined portfolio tuples 
+        to dictionaries of terminal pair reliabilities
+        
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        json.JSONDecodeError: If invalid JSON format
+    """
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        
+        # Convert the nested structure back to original format
+        reliabilities = {}
+        reliabilities_data = data.get('terminal_pair_reliabilities_by_combined_portfolio', {})
+        
+        for portfolio_str, pair_reliabilities_data in reliabilities_data.items():
+            try:
+                # Parse the portfolio tuple from string format
+                # String format is like "(1, 2, 3)" or "(1, 2)" etc.
+                portfolio_str_clean = portfolio_str.strip()
+                
+                # Handle tuple string format
+                if portfolio_str_clean.startswith('(') and portfolio_str_clean.endswith(')'):
+                    # Remove parentheses and split by commas
+                    inner_str = portfolio_str_clean[1:-1].strip()
+                    if inner_str:
+                        parts = [part.strip() for part in inner_str.split(',')]
+                        portfolio_tuple = tuple(int(part) for part in parts if part)
+                    else:
+                        # Handle empty tuple case "( )"
+                        portfolio_tuple = tuple()
+                else:
+                    # Handle single portfolio case (not in tuple format)
+                    portfolio_tuple = (int(portfolio_str_clean),)
+                
+                reliabilities[portfolio_tuple] = {}
+                
+                # Convert string keys back to tuple format
+                for key_str, reliability in pair_reliabilities_data.items():
+                    # Remove the parentheses and split by comma
+                    # Key is stored as "(source, target)" - remove parentheses and strip whitespace
+                    key_str_clean = key_str.strip('() ')
+                    parts = key_str_clean.split(',')
+                    
+                    if len(parts) == 2:
+                        source = parts[0].strip().strip("'\"")
+                        target = parts[1].strip().strip("'\"")
+                        reliabilities[portfolio_tuple][(source, target)] = reliability
+                    else:
+                        print(f"⚠️ Warning: Could not parse key '{key_str}' for portfolio {portfolio_str}, skipping")
+                        
+            except ValueError:
+                print(f"⚠️ Warning: Could not parse portfolio tuple '{portfolio_str}', skipping")
+            except Exception as e:
+                print(f"⚠️ Warning: Error parsing portfolio '{portfolio_str}': {str(e)}, skipping")
+        
+        print(f"✅ Loaded {len(reliabilities)} combined portfolio reliabilities from {filename}")
+        return reliabilities
+        
+    except FileNotFoundError:
+        print(f"❌ Error: File {filename} not found")
+        raise
+    except json.JSONDecodeError:
+        print(f"❌ Error: Invalid JSON format in {filename}")
+        raise
+    except Exception as e:
+        print(f"❌ Error reading {filename}: {str(e)}")
+        raise
+
+def save_combined_portfolios_mc(Q_star: set[tuple[int, ...]], 
+                             performances: dict[tuple[int, ...], list[float]], 
+                             combined_costs: dict[tuple[int, ...], list[float]],
+                             dict_node_reinforcements: dict[str, list[tuple[str, float]]],
+                             subnetworks: list[str],
+                             filename: str) -> str:
+    """
+    Save combined cost-efficient portfolios to a JSON file.
+    
+    Parameters:
+        Q_star: Set of cost-efficient combined portfolio tuples
+        performances: Dictionary of portfolio performances
+        combined_costs: Dictionary of portfolio costs for each resource
+        dict_node_reinforcements: Dictionary mapping subnetwork to node reinforcement actions
+        subnetworks: List of subnetwork identifiers
+        filename: Output filename (optional)
+    """
+    
+    # Prepare the data for JSON serialization
+    output_data = {
+        'metadata': {
+            'generated_at': datetime.now().isoformat(),
+            'total_combined_portfolios': len(Q_star),
+            'number_of_subnetworks': len(subnetworks),
+            'subnetworks': subnetworks,
+            'budget_dimensions': len(next(iter(combined_costs.values()))) if combined_costs else 0
+        },
+        'node_reinforcements_by_subnetwork': dict_node_reinforcements,
+        'cost_efficient_combined_portfolios': []
+    }
+    
+    # Add each combined portfolio with its details
+    for portfolio in sorted(Q_star, key=lambda x: performances.get(x, [0.0]), reverse=True):
+        portfolio_data = combined_portfolio_to_readable(portfolio, dict_node_reinforcements, subnetworks)
+        
+        # Add performance and cost information
+        portfolio_data.update({
+            'performance': performances.get(portfolio, [0.0]),
+            'cost_per_resource': combined_costs.get(portfolio, [0.0]),
+            'total_cost': sum(combined_costs.get(portfolio, [0.0]))
+        })
+        
+        output_data['cost_efficient_combined_portfolios'].append(portfolio_data)
+    
+    # Write to JSON file
+    with open(filename, 'w', encoding='utf-8') as file:
+        json.dump(output_data, file, indent=2, ensure_ascii=False)
+    
+    print(f"✅ Saved {len(Q_star)} combined cost-efficient portfolios to {filename}")
+    return filename
+
+def read_combined_portfolios_mc(filename: str) -> tuple[set[tuple[int, ...]], 
+                                                   dict[tuple[int, ...], list[float]], 
+                                                   dict[tuple[int, ...], list[float]],
+                                                   dict[str, list[tuple[str, float]]],
+                                                   list[str]]:
+    """
+    Read combined cost-efficient portfolios from a JSON file.
+    
+    Parameters:
+        filename: Input filename
+        
+    Returns:
+        Tuple of (Q_star, performances, combined_costs, dict_node_reinforcements, subnetworks) where:
+        - Q_star: Set of cost-efficient combined portfolio tuples
+        - performances: Dictionary of portfolio performances
+        - combined_costs: Dictionary of portfolio costs for each resource
+        - dict_node_reinforcements: Dictionary mapping subnetwork to node reinforcement actions
+        - subnetworks: List of subnetwork identifiers
+    """
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        
+        # Extract metadata
+        metadata = data.get('metadata', {})
+        subnetworks = metadata.get('subnetworks', [])
+        
+        # Extract node_reinforcements by subnetwork
+        dict_node_reinforcements = {}
+        reinforcements_data = data.get('node_reinforcements_by_subnetwork', {})
+        for subnetwork, reinforcement_list in reinforcements_data.items():
+            dict_node_reinforcements[subnetwork] = []
+            for reinforcement in reinforcement_list:
+                if isinstance(reinforcement, list) and len(reinforcement) == 2:
+                    dict_node_reinforcements[subnetwork].append((reinforcement[0], reinforcement[1]))
+                else:
+                    print(f"⚠️ Warning: Invalid reinforcement format {reinforcement} for {subnetwork}, skipping")
+        
+        # Extract combined portfolios and their details
+        Q_star = set()
+        performances = {}
+        combined_costs = {}
+        
+        portfolios_data = data.get('cost_efficient_combined_portfolios', [])
+        for portfolio_data in portfolios_data:
+            portfolio_tuple_str = portfolio_data.get('combined_portfolio_id')
+            if portfolio_tuple_str is not None:
+                # Convert tuple string representation back to actual tuple
+                try:
+                    # Handle both string representation and direct list
+                    if isinstance(portfolio_tuple_str, str):
+                        # Convert string like "(0, 1, 2)" to tuple
+                        portfolio_tuple = tuple(map(int, portfolio_tuple_str.strip('()').split(',')))
+                    else:
+                        # Assume it's already a list in the JSON
+                        portfolio_tuple = tuple(portfolio_tuple_str)
+                    
+                    Q_star.add(portfolio_tuple)
+                    performances[portfolio_tuple] = portfolio_data.get('performance', [0.0])
+                    combined_costs[portfolio_tuple] = portfolio_data.get('cost_per_resource', [0.0])
+                    
+                except (ValueError, AttributeError) as e:
+                    print(f"⚠️ Warning: Could not parse portfolio tuple {portfolio_tuple_str}, skipping: {e}")
+        
+        print(f"✅ Loaded {len(Q_star)} combined cost-efficient portfolios from {filename}")
+        print(f"✅ Loaded {len(subnetworks)} subnetworks: {subnetworks}")
+        
+        return Q_star, performances, combined_costs, dict_node_reinforcements, subnetworks
+        
+    except FileNotFoundError:
+        print(f"❌ Error: File {filename} not found")
+        return set(), {}, {}, {}, []
+    except json.JSONDecodeError:
+        print(f"❌ Error: Invalid JSON format in {filename}")
+        return set(), {}, {}, {}, []
+    except Exception as e:
+        print(f"❌ Error reading {filename}: {str(e)}")
+        return set(), {}, {}, {}, []

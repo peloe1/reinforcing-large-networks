@@ -16,7 +16,8 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
                                        budget: list[float],
                                        k: int) -> tuple[set[tuple[int, ...]], 
                                                          dict[tuple[int, ...], float], 
-                                                         dict[tuple[int, ...], list[float]]
+                                                         dict[tuple[int, ...], list[float]],
+                                                         dict[tuple[int, ...], dict[tuple[str, str]]]
                                                         ]:
     r = len(budget)
     
@@ -24,6 +25,8 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
     Q_star: set[tuple[int, ...]] = set()
     combined_performances: dict[tuple[int, ...], float] = {}
     combined_costs: dict[tuple[int, ...], list[float]] = {}
+
+    dict_reliabilities: dict[tuple[int, ...], dict[tuple[str, str]]] = {}
 
     start = time.time()
     j = 0
@@ -56,7 +59,10 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
                     combined_costs[tuple(Q_copy)] = cost_vector
 
                     ## Step 6        
-                    combined_performances[tuple(Q_copy)] = expected_travel_hierarchical(Q_copy, subnetworks, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
+                    performance, reliability_dict = expected_travel_hierarchical(Q_copy, subnetworks, partitioned_paths, terminal_pair_reliabilities, travel_volumes)
+                    combined_performances[tuple(Q_copy)] = performance
+
+                    dict_reliabilities[tuple(Q_copy)] = reliability_dict
         # Step 7
         dominated = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q2], combined_costs[Q1]) for Q2 in Q_star), Q_j))
         Q_j = Q_j.difference(dominated)
@@ -78,7 +84,7 @@ def cost_efficient_combined_portfolios(partitioned_paths: dict[tuple[str, str], 
     dominated = set(filter(lambda Q1: any(dominates_with_cost(combined_performances[Q2], combined_performances[Q1], combined_costs[Q2], combined_costs[Q1]) for Q2 in Q_star), Q_star))
     Q_star = Q_star.difference(dominated)
     # Step 11 and 12
-    return Q_star, combined_performances, combined_costs
+    return Q_star, combined_performances, combined_costs, dict_reliabilities
 
 
 def random_portfolios(partitioned_paths: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]], 

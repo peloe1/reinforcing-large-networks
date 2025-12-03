@@ -300,7 +300,7 @@ def load_existing_frequencies(output_file):
         print("No existing frequency file found. Starting fresh.")
         return defaultdict(int)
 
-def save_frequencies(frequencies, output_file):
+def save_frequencies(frequencies: dict[tuple[str, str], float], output_file: str):
     """
     Save frequencies to JSON file.
     Convert tuple keys to strings for JSON compatibility.
@@ -311,6 +311,8 @@ def save_frequencies(frequencies, output_file):
     # Convert defaultdict to regular dict with string keys
     output_dict = {}
     for key, value in frequencies.items():
+        n1, n2 = key
+        key = tuple(sorted([n1, n2]))
         key_str = str(key)  # Convert tuple to string like "('KUO', 'SOR')"
         output_dict[key_str] = value
     
@@ -454,7 +456,8 @@ def read_travel_volumes(filename: str) -> dict[tuple[str, str], float]:
 
 def subnetwork_travel_volumes(subnetworks: list[str],
                               travel_volumes: dict[tuple[str, str], float],
-                              intermediate_pairs: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]]
+                              intermediate_pairs: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]],
+                              output_subnetworks_dir = "model/parameters/subnetwork_volumes"
                               ):
     neighbour_subnetworks: dict[str, str] = {'krm': 'kuo',
                                              'ohm': 'te',
@@ -482,7 +485,7 @@ def subnetwork_travel_volumes(subnetworks: list[str],
                     volumes[neighbour_subnetworks[sub]][pair] = f
                 else:
                     volumes[neighbour_subnetworks[sub]][pair] += f
-    output_subnetworks_dir = "model/parameters/subnetwork_volumes"
+    
     save_subnetwork_volumes(volumes, output_subnetworks_dir)
 
 

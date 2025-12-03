@@ -60,7 +60,7 @@ def expected_travel_hierarchical(Q: list[int],
                                  subnetworks: list[str],
                                  partitioned_paths: dict[tuple[str, str], tuple[list[tuple[str, str]], list[str]]], 
                                  terminal_pair_reliabilities: dict[str, dict[int, dict[tuple[str, str], float]]], 
-                                 travel_volumes: dict[tuple[str, str], float]) -> float:
+                                 travel_volumes: dict[tuple[str, str], float]) -> tuple[float, dict[tuple[str, str], float]]:
     
     subnetwork_map: dict[str, str] = {'krm': 'kuo',
                                       'ohm': 'te',
@@ -76,6 +76,8 @@ def expected_travel_hierarchical(Q: list[int],
                                       "te": "te", 
                                       "toi": "toi"
                                       }
+    reliability_dict: dict[tuple[str, str], float] = {}
+
     expectation: float = 0.0
     for terminal_pair, (path, sub_path) in partitioned_paths.items():
         reliability: float = 1.0
@@ -98,6 +100,8 @@ def expected_travel_hierarchical(Q: list[int],
                 else:
                     reliability *= reliabilities_subnetwork[q][intermediate_pair]
         
+        reliability_dict[terminal_pair] = reliability
+
         expectation += reliability * travel_volumes[terminal_pair]
 
-    return expectation
+    return expectation, reliability_dict

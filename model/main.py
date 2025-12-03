@@ -79,7 +79,7 @@ def main(verbose = False) -> None:
     budget = [45.0]
 
     compute_subnetwork = True
-    compute_random = True
+    compute_random = False
 
 
     if compute_subnetwork:
@@ -300,10 +300,10 @@ def main(verbose = False) -> None:
     #    print(path)
     #    print("with subnetwork path: ")
     #    print(sub_path)
-    compute_hierarchical = False
+    compute_hierarchical = True
     if compute_hierarchical:
         start = time.time()
-        Q_star, combined_performances, combined_costs = cost_efficient_combined_portfolios(partitioned_paths, 
+        Q_star, combined_performances, combined_costs, dict_reliabilities = cost_efficient_combined_portfolios(partitioned_paths, 
                                                                                         dict_reliabilities, 
                                                                                         travel_volumes, 
                                                                                         dict_Q_CE, 
@@ -325,8 +325,12 @@ def main(verbose = False) -> None:
                             dict_reinforcement_actions, 
                             subnetworks, 
                             filename="model/results/whole_network_ce_portfolios.json")
+        
+        save_combined_portfolio_reliabilities(Q_star, dict_reliabilities, "model/results/whole_network_reliabilities.json")
+
     else:
         Q_star, combined_performances, combined_costs, _, _ = read_combined_portfolios("model/results/whole_network_ce_portfolios.json")
+        reliabilities = read_combined_portfolio_reliabilities("model/results/whole_network_reliabilities.json")
 
     print(f"Number of resulting cost-efficient combined portfolios: {len(Q_star)}")
     
