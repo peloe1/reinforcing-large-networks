@@ -136,7 +136,7 @@ def read_cost_efficient_portfolios(filename: str) -> tuple[set[int], dict[int, f
                 portfolio_costs[portfolio_id] = [cost]
         
         print(f"✅ Loaded {len(Q)} cost-efficient portfolios from {filename}")
-        print(f"✅ Loaded {len(node_reinforcements)} node reinforcement actions")
+        #print(f"✅ Loaded {len(node_reinforcements)} node reinforcement actions")
         
         return Q, performances, portfolio_costs, node_reinforcements
         

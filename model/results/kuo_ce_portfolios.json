@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "generated_at": "2025-12-02T00:06:51.348471",
-    "total_portfolios": 25,
+    "generated_at": "2025-12-11T07:49:56.083228",
+    "total_portfolios": 22,
     "number_of_actions": 42
   },
   "node_reinforcements": [
@@ -222,7 +222,7 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 22144.133447159245,
+      "performance": 12688.643447159247,
       "cost": 0.0,
       "total_cost": 0.0
     },
@@ -275,7 +275,7 @@
       "reinforced_nodes": [
         "KUO V0941"
       ],
-      "performance": 22248.76750497318,
+      "performance": 12745.52250497318,
       "cost": 1,
       "total_cost": 1
     },
@@ -329,7 +329,7 @@
         "KUO V0002",
         "KUO V0941"
       ],
-      "performance": 22302.505396412438,
+      "performance": 12799.26039641244,
       "cost": 2,
       "total_cost": 2
     },
@@ -384,7 +384,7 @@
         "KUO V0003",
         "KUO V0941"
       ],
-      "performance": 22349.27330245493,
+      "performance": 12846.02830245493,
       "cost": 3,
       "total_cost": 3
     },
@@ -439,7 +439,7 @@
         "KUO V0011",
         "KUO V0941"
       ],
-      "performance": 22349.27330245493,
+      "performance": 12846.02830245493,
       "cost": 3,
       "total_cost": 3
     },
@@ -495,7 +495,7 @@
         "KUO V0011",
         "KUO V0941"
       ],
-      "performance": 22396.277410043083,
+      "performance": 12893.032410043086,
       "cost": 4,
       "total_cost": 4
     },
@@ -552,7 +552,7 @@
         "KUO V0011",
         "KUO V0941"
       ],
-      "performance": 22398.556256824195,
+      "performance": 12895.3112568242,
       "cost": 5,
       "total_cost": 5
     },
@@ -610,7 +610,7 @@
         "KUO V0021",
         "KUO V0941"
       ],
-      "performance": 22399.930153774018,
+      "performance": 12896.685153774017,
       "cost": 6,
       "total_cost": 6
     },
@@ -669,7 +669,7 @@
         "KUO V0021",
         "KUO V0941"
       ],
-      "performance": 22400.40954864189,
+      "performance": 12897.164548641887,
       "cost": 7,
       "total_cost": 7
     },
@@ -728,69 +728,9 @@
         "KUO V0021",
         "KUO V0941"
       ],
-      "performance": 22400.40954864189,
+      "performance": 12897.164548641887,
       "cost": 7,
       "total_cost": 7
-    },
-    {
-      "portfolio_id": 274878048376,
-      "binary_vector": [
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0
-      ],
-      "reinforced_nodes": [
-        "KUO V0002",
-        "KUO V0003",
-        "KUO V0004",
-        "KUO V0005",
-        "KUO V0011",
-        "KUO V0013",
-        "KUO V0021",
-        "KUO V0941"
-      ],
-      "performance": 22400.891364695955,
-      "cost": 8,
-      "total_cost": 8
     },
     {
       "portfolio_id": 274878302264,
@@ -847,7 +787,7 @@
         "KUO V0023",
         "KUO V0941"
       ],
-      "performance": 22400.40954864189,
+      "performance": 12897.16454864189,
       "cost": 7,
       "total_cost": 7
     },
@@ -907,7 +847,7 @@
         "KUO V0023",
         "KUO V0941"
       ],
-      "performance": 22400.891364695963,
+      "performance": 12897.646364695962,
       "cost": 8,
       "total_cost": 8
     },
@@ -967,7 +907,7 @@
         "KUO V0023",
         "KUO V0941"
       ],
-      "performance": 22400.891364695955,
+      "performance": 12897.64636469596,
       "cost": 8,
       "total_cost": 8
     },
@@ -1028,7 +968,7 @@
         "KUO V0023",
         "KUO V0941"
       ],
-      "performance": 22401.37561416444,
+      "performance": 12898.130614164445,
       "cost": 9,
       "total_cost": 9
     },
@@ -1090,7 +1030,7 @@
         "KUO V0041",
         "KUO V0941"
       ],
-      "performance": 22401.628536686214,
+      "performance": 12898.383536686215,
       "cost": 10,
       "total_cost": 10
     },
@@ -1152,7 +1092,7 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.628536686214,
+      "performance": 12898.383536686215,
       "cost": 10,
       "total_cost": 10
     },
@@ -1215,140 +1155,9 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.882736594453,
+      "performance": 12898.637736594455,
       "cost": 11,
       "total_cost": 11
-    },
-    {
-      "portfolio_id": 275553593464,
-      "binary_vector": [
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0
-      ],
-      "reinforced_nodes": [
-        "KUO V0002",
-        "KUO V0003",
-        "KUO V0004",
-        "KUO V0005",
-        "KUO V0011",
-        "KUO V0013",
-        "KUO V0021",
-        "KUO V0023",
-        "KUO V0032",
-        "KUO V0041",
-        "KUO V0302",
-        "KUO V0941"
-      ],
-      "performance": 22401.914308902727,
-      "cost": 12,
-      "total_cost": 12
-    },
-    {
-      "portfolio_id": 275555166456,
-      "binary_vector": [
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0
-      ],
-      "reinforced_nodes": [
-        "KUO V0002",
-        "KUO V0003",
-        "KUO V0004",
-        "KUO V0005",
-        "KUO V0006",
-        "KUO V0011",
-        "KUO V0013",
-        "KUO V0021",
-        "KUO V0023",
-        "KUO V0025",
-        "KUO V0027",
-        "KUO V0032",
-        "KUO V0041",
-        "KUO V0302",
-        "KUO V0941"
-      ],
-      "performance": 22401.967438292246,
-      "cost": 15,
-      "total_cost": 15
     },
     {
       "portfolio_id": 275582953592,
@@ -1410,7 +1219,7 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.914308902727,
+      "performance": 12898.669308902729,
       "cost": 12,
       "total_cost": 12
     },
@@ -1477,7 +1286,7 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.967438292253,
+      "performance": 12898.722438292252,
       "cost": 15,
       "total_cost": 15
     },
@@ -1542,7 +1351,7 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.9460406671,
+      "performance": 12898.701040667102,
       "cost": 13,
       "total_cost": 13
     },
@@ -1608,7 +1417,7 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.959564153367,
+      "performance": 12898.714564153368,
       "cost": 14,
       "total_cost": 14
     },
@@ -1676,7 +1485,7 @@
         "KUO V0302",
         "KUO V0941"
       ],
-      "performance": 22401.982251319736,
+      "performance": 12898.737251319737,
       "cost": 16,
       "total_cost": 16
     }

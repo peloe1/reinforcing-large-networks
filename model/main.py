@@ -290,7 +290,7 @@ def main(verbose = False) -> None:
 
     # This now works 13.11.
     partitioned_paths = intermediate_terminal_pairs(path_list, node_to_subnetwork, dict_transitions)
-    subnetwork_travel_volumes(subnetworks, travel_volumes, partitioned_paths)
+    #subnetwork_travel_volumes(subnetworks, travel_volumes, partitioned_paths)
     #print(f"Partitioned paths: {partitioned_paths}")
 
     #print(f"Number of keys in partitioned paths: {len(partitioned_paths)}, which should match the number of terminal pairs {len(terminal_node_pairs)}")

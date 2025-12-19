@@ -1,7 +1,11 @@
 from travel_volumes import *
 from result_handling import *
 from numpy import random
-
+import json
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import stats
+import pandas as pd
 
 SCENARIO_TO_PAIR: dict[str, tuple[str, str]] = {
     "1_south_north": ('KRM V0001|V0002', 'OHM V0002'),
@@ -42,6 +46,12 @@ SCENARIO_TO_PAIR: dict[str, tuple[str, str]] = {
     "36_kuo_apt": ('KUO V0002', 'APT V0001')
 }
 
+def format_station_name(name: str):
+    if len(name) <= 3:
+        return name.upper()
+    else:
+        return name.capitalize()
+
 
 # TODO: Add some random points as well for which we compute the error bars?
 def main(Q_star: set[tuple[int, ...]], 
@@ -49,7 +59,7 @@ def main(Q_star: set[tuple[int, ...]],
          dict_node_reinforcements: dict[str, list[tuple[str, float]]],
          travel_volumes: dict[tuple[str, str], float],
          reliabilities: dict[tuple[int, ...], dict[tuple[str, str], float]],
-         directory: str, 
+         directory: str = "", 
          scenario_name = None,
          direction = None
          ) -> dict[tuple[int, ...], float]:
@@ -75,11 +85,497 @@ def main(Q_star: set[tuple[int, ...]],
 
     return performances
 
+def plot_pareto_frontier_with_ci(costs: list[float], 
+                                 performances: list[list[float]],  # Now a list of lists for multiple samples
+                                 random_costs=None, 
+                                 random_performances=None, 
+                                 sub_network=None, 
+                                 normalize=False,
+                                 confidence_level=0.95,
+                                 show_ci=True,
+                                 ci_style='errorbar',  # 'errorbar', 'shaded', or 'boxplot'
+                                 plot_mean_line=False):
+    """
+    Plot Pareto frontier with confidence intervals.
+    
+    Parameters:
+    -----------
+    costs : list[float]
+        List of costs (number of reinforced switches) for each portfolio
+    performances : list[list[float]]
+        List of lists containing performance samples for each portfolio
+    random_costs : list[float], optional
+        Costs for random portfolios
+    random_performances : list[list[float]] or list[float], optional
+        Performances for random portfolios (can be single values or lists)
+    sub_network : str, optional
+        Name of subnetwork for title
+    normalize : bool, optional
+        Whether to normalize the performance values
+    confidence_level : float, optional
+        Confidence level for intervals (default 0.95 for 95%)
+    show_ci : bool, optional
+        Whether to show confidence intervals
+    ci_style : str, optional
+        Style for confidence intervals: 'errorbar', 'shaded', or 'boxplot'
+    plot_mean_line : bool, optional
+        Whether to connect mean points with a line
+        
+    Returns:
+    --------
+    fig, ax : matplotlib figure and axis objects
+    """
+    
+    # Calculate means and confidence intervals for each portfolio
+    portfolio_means = []
+    portfolio_stds = []
+    ci_lowers = []
+    ci_uppers = []
+    margin_errors = []
+    
+    for perf_samples in performances:
+        if isinstance(perf_samples, (int, float)):
+            # Single value
+            portfolio_means.append(perf_samples)
+            portfolio_stds.append(0)
+            ci_lowers.append(perf_samples)
+            ci_uppers.append(perf_samples)
+            margin_errors.append(0)
+        else:
+            # Multiple samples
+            samples = np.array(perf_samples)
+            mean_val = np.mean(samples)
+            std_val = np.std(samples)
+            
+            portfolio_means.append(mean_val)
+            portfolio_stds.append(std_val)
+            
+            # Calculate confidence interval
+            n = len(samples)
+            if n > 1:
+                # Use t-distribution for small samples
+                t_value = stats.t.ppf((1 + confidence_level) / 2, df=n-1)
+                std_err = std_val / np.sqrt(n)
+                margin_error = t_value * std_err
+            else:
+                margin_error = 0
+            
+            ci_lowers.append(mean_val - margin_error)
+            ci_uppers.append(mean_val + margin_error)
+            margin_errors.append(margin_error)
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Plot random portfolios (if provided)
+    if random_costs is not None and random_performances is not None:
+        # Handle both single values and multiple samples for random portfolios
+        if isinstance(random_performances[0], (list, np.ndarray)):
+            # Calculate means for random portfolios with multiple samples
+            random_means = [np.mean(p) if isinstance(p, (list, np.ndarray)) else p 
+                           for p in random_performances]
+            scatter2 = ax.scatter(x=random_costs, y=random_means, 
+                                 c='black', s=1, marker='o', 
+                                 alpha=0.5, label='Random Portfolios')
+        else:
+            # Single values
+            scatter2 = ax.scatter(x=random_costs, y=random_performances, 
+                                 c='black', s=1, marker='o', 
+                                 alpha=0.5, label='Random Portfolios')
+    
+    # Plot cost-efficient portfolios with confidence intervals
+    if show_ci:
+        if ci_style == 'errorbar':
+            # Plot with error bars
+            scatter1 = ax.errorbar(costs, portfolio_means, 
+                                   yerr=margin_errors, 
+                                   fmt='o', color='red', 
+                                   markersize=8, capsize=5,
+                                   label='Cost-Efficient Portfolios',
+                                   alpha=0.7)
+            
+            # Connect mean points with line if requested
+            if plot_mean_line:
+                # Sort by cost for better line connection
+                sorted_indices = np.argsort(costs)
+                sorted_costs = [costs[i] for i in sorted_indices]
+                sorted_means = [portfolio_means[i] for i in sorted_indices]
+                ax.plot(sorted_costs, sorted_means, 'r-', alpha=0.5, linewidth=1)
+                
+        elif ci_style == 'shaded':
+            # Plot mean points
+            scatter1 = ax.scatter(costs, portfolio_means, 
+                                 c='red', s=10, marker='o',
+                                 label='Cost-Efficient Portfolios',
+                                 zorder=5)
+            
+            # Connect mean points with line if requested
+            if plot_mean_line:
+                sorted_indices = np.argsort(costs)
+                sorted_costs = [costs[i] for i in sorted_indices]
+                sorted_means = [portfolio_means[i] for i in sorted_indices]
+                ax.plot(sorted_costs, sorted_means, 'r-', alpha=0.7, linewidth=2, zorder=4)
+            
+            # Add shaded confidence region
+            sorted_indices = np.argsort(costs)
+            sorted_costs = [costs[i] for i in sorted_indices]
+            sorted_lowers = [ci_lowers[i] for i in sorted_indices]
+            sorted_uppers = [ci_uppers[i] for i in sorted_indices]
+            
+            ax.fill_between(sorted_costs, sorted_lowers, sorted_uppers,
+                           alpha=0.2, color='red', label=f'{int(confidence_level*100)}% Confidence Interval')
+            
+        elif ci_style == 'boxplot':
+            # Create positions for boxplots
+            unique_costs = sorted(set(costs))
+            cost_to_positions = {cost: i for i, cost in enumerate(unique_costs)}
+            
+            # Group performances by cost
+            performances_by_cost = {cost: [] for cost in unique_costs}
+            for cost, perf_samples in zip(costs, performances):
+                if isinstance(perf_samples, (list, np.ndarray)):
+                    performances_by_cost[cost].extend(perf_samples)
+                else:
+                    performances_by_cost[cost].append(perf_samples)
+            
+            # Create boxplot
+            box_data = [performances_by_cost[cost] for cost in unique_costs]
+            positions = [cost_to_positions[cost] for cost in unique_costs]
+            
+            bp = ax.boxplot(box_data, positions=positions, 
+                           widths=0.6, patch_artist=True,
+                           showmeans=True, meanline=True,
+                           boxprops=dict(facecolor='lightcoral'),
+                           medianprops=dict(color='darkred'),
+                           meanprops=dict(color='red', linewidth=2))
+            
+            # Set x-ticks to actual cost values
+            ax.set_xticks(positions)
+            ax.set_xticklabels([str(cost) for cost in unique_costs])
+            
+            # Add scatter of means for consistency
+            scatter1 = ax.scatter(costs, portfolio_means, 
+                                 c='darkred', s=10, marker='D',
+                                 label='Portfolio Means', zorder=10)
+    else:
+        # Original plotting without confidence intervals
+        scatter1 = ax.scatter(x=costs, y=portfolio_means, 
+                             c='red', s=10, marker='o', 
+                             label='Cost-Efficient Portfolios')
+    
+    # Add legend
+    ax.legend(loc='best')
+    
+    # Set title
+    if sub_network is None:
+        plt.title(f'Combined Portfolios (with {int(confidence_level*100)}% Confidence Intervals)')
+    else:
+        plt.title(f'Cost-Efficient Portfolios of Subnetwork {sub_network} (with {int(confidence_level*100)}% CI)')
+    
+    # Set labels
+    plt.xlabel('Number of Reinforced Switches')
+    plt.ylabel('Expected Enabled Traffic Volume')
+    
+    # Set x-ticks (adjust as needed)
+    max_cost = int(max(costs)) if costs else 0
+    plt.xticks(range(0, max_cost + 5, 5))
+    
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3, linestyle='--')
+    
+    # Adjust layout
+    plt.tight_layout()
+    
+    return fig, ax, {
+        'means': portfolio_means,
+        'ci_lowers': ci_lowers,
+        'ci_uppers': ci_uppers,
+        'stds': portfolio_stds,
+        'margin_errors': margin_errors
+    }
+
+def analyze_monte_carlo_results(filename: str):
+    """
+    Analyze and visualize Monte Carlo results.
+    """
+    with open(filename, 'r') as f:
+        data = json.load(f)
+    
+    # Extract data
+    costs, performances = prepare_data_from_structure(data)
+    
+    # Print summary statistics
+    print("\n" + "="*80)
+    print("MONTE CARLO SIMULATION RESULTS")
+    print("="*80)
+    
+    for i, (cost, perf_samples) in enumerate(zip(costs, performances)):
+        samples = np.array(perf_samples)
+        mean_val = np.mean(samples)
+        std_val = np.std(samples)
+        ci_low = np.percentile(samples, 2.5)
+        ci_high = np.percentile(samples, 97.5)
+        cv = std_val / mean_val * 100  # Coefficient of variation
+        
+        print(f"Portfolio {i+1:2d} (Cost={cost:2d}): "
+              f"Mean={mean_val:8.2f}, Std={std_val:6.2f}, "
+              f"95% CI=[{ci_low:8.2f}, {ci_high:8.2f}], "
+              f"CV={cv:5.2f}%")
+    
+    # Create comprehensive visualization
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    
+    # 1. Pareto frontier with CI
+    means = [np.mean(p) for p in performances]
+    stds = [np.std(p) for p in performances]
+    std_errs = [std/np.sqrt(len(p)) for std in stds]
+    margin_errors = [1.96 * se for se in std_errs]  # 95% CI
+    
+    ax1.errorbar(costs, means, yerr=margin_errors, fmt='o-', 
+                capsize=5, color='red', alpha=0.7)
+    ax1.set_xlabel('Number of Reinforced Switches')
+    ax1.set_ylabel('Expected Enabled Traffic Volume')
+    ax1.set_title('Pareto Frontier with 95% Confidence Intervals')
+    ax1.grid(True, alpha=0.3)
+    
+    # 2. Distribution of uncertainties
+    rel_errors = [me/mean*100 for me, mean in zip(margin_errors, means)]
+    ax2.bar(range(len(costs)), rel_errors, color='steelblue', alpha=0.7)
+    ax2.set_xlabel('Portfolio Index')
+    ax2.set_ylabel('Relative Uncertainty (%)')
+    ax2.set_title('Relative 95% CI Width (% of mean)')
+    ax2.set_xticks(range(len(costs)))
+    ax2.set_xticklabels([str(c) for c in costs])
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    # 3. Sample distributions for selected portfolios
+    selected_indices = [0, len(performances)//2, -1]
+    colors = ['red', 'green', 'blue']
+    
+    for idx, color in zip(selected_indices, colors):
+        data = performances[idx]
+        ax3.hist(data, bins=50, alpha=0.5, density=True, 
+                color=color, label=f'Cost={costs[idx]}')
+    
+    ax3.set_xlabel('Performance')
+    ax3.set_ylabel('Density')
+    ax3.set_title('Performance Distributions (Selected Portfolios)')
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    
+    # 4. Convergence analysis (if you track intermediate results)
+    # Plot how mean converges with sample size
+    if len(performances[0]) >= 100:
+        sample_sizes = np.logspace(1, np.log10(len(performances[0])), 20).astype(int)
+        convergence_data = []
+        
+        for n in sample_sizes:
+            subset_means = [np.mean(samples[:n]) for samples in performances]
+            convergence_data.append(np.std(subset_means))
+        
+        ax4.plot(sample_sizes, convergence_data, 'o-', linewidth=2)
+        ax4.set_xlabel('Sample Size')
+        ax4.set_ylabel('Std Dev of Portfolio Means')
+        ax4.set_title('Monte Carlo Convergence')
+        ax4.set_xscale('log')
+        ax4.grid(True, alpha=0.3)
+    
+    plt.suptitle(f'Monte Carlo Analysis: {len(performances[0]):,} samples per portfolio', 
+                 fontsize=16)
+    plt.tight_layout()
+    
+    # Save figures
+    plt.savefig(f"{filename.replace('.json', '_analysis.png')}", dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    return {
+        'costs': costs,
+        'means': means,
+        'stds': stds,
+        'margin_errors': margin_errors,
+        'rel_errors': rel_errors
+    }
 
 
+# Helper function to prepare data from your structure
+def prepare_data_from_structure(data):
+    """
+    Extract costs and performances from your data structure.
     
+    Parameters:
+    -----------
+    data : dict
+        Your data structure containing portfolios
+        
+    Returns:
+    --------
+    costs : list
+        List of costs (number of reinforced switches)
+    performances : list of lists
+        List of performance samples for each portfolio
+    """
+    costs = []
+    performances = []
     
+    for portfolio in data['cost_efficient_combined_portfolios']:
+        # Calculate cost: number of reinforced nodes
+        total_nodes = len(portfolio['total_reinforced_nodes'])
+        costs.append(total_nodes)
+        
+        # Extract performance samples
+        # Note: In your data, performance seems to be a single list
+        # You might need to adjust this based on your actual data structure
+        if 'performance' in portfolio:
+            perf_data = portfolio['performance']
+            # If performance is a single value, make it a list
+            if isinstance(perf_data, (int, float)):
+                performances.append([perf_data])
+            else:
+                performances.append(perf_data)
     
+    return costs, performances
+
+
+
+def load_portfolio_json(filename, scenario="baseline", direction="base"):
+    with open(filename, "r") as f:
+        data = json.load(f)
+
+    rows = []
+    for p in data["cost_efficient_combined_portfolios"]:
+        rows.append({
+            "portfolio_id": tuple(p["combined_portfolio_id"]),
+            "cost": p["total_cost"],
+            "performance": p["performance"],
+            "scenario": scenario,
+            "direction": direction
+        })
+    return pd.DataFrame(rows)
+
+def build_sensitivity_dataframe(
+    baseline_file,
+    scenario_files: dict
+):
+    """
+    scenario_files:
+      {
+        "1_south_north": {
+            "lower": "...json",
+            "higher": "...json"
+        },
+        ...
+      }
+    """
+    dfs = []
+
+    # baseline
+    dfs.append(load_portfolio_json(baseline_file))
+
+    # scenarios
+    for scen, files in scenario_files.items():
+        for direction, fname in files.items():
+            dfs.append(load_portfolio_json(
+                fname,
+                scenario=scen,
+                direction=direction
+            ))
+
+    return pd.concat(dfs, ignore_index=True)
+
+def compute_univariate_metrics(df):
+    base = (
+        df[df.direction == "base"]
+        .set_index("portfolio_id")
+        [["cost", "performance"]]
+        .rename(columns={"performance": "base_perf"})
+    )
+
+    sens = (
+        df[df.direction != "base"]
+        .pivot_table(
+            index=["portfolio_id", "scenario"],
+            columns="direction",
+            values="performance"
+        )
+        .reset_index()
+    )
+
+    merged = sens.merge(base, on="portfolio_id")
+
+    merged["delta_plus"]  = merged["higher"] - merged["base_perf"]
+    merged["delta_minus"] = merged["lower"]  - merged["base_perf"]
+    merged["normalized_sensitivity"] = (
+        (merged["higher"] - merged["lower"])
+        / (2 * merged["base_perf"])
+    )
+
+    return merged, base.reset_index()
+
+
+def plot_pareto_envelope(base, sens):
+    env = sens.groupby("portfolio_id").agg(
+        perf_min=("lower", "min"),
+        perf_max=("higher", "max")
+    )
+
+    df = base.merge(env, on="portfolio_id")
+
+    df = df.sort_values("cost")
+
+    fig, ax = plt.subplots(figsize=(9,6))
+    ax.scatter(x=df.cost, y=df.base_perf, marker="o", color="red", label="Cost-Efficient Combined Portfolios")
+    ax.fill_between(df.cost, df.perf_min, df.perf_max,
+                    alpha=0.25, label="±10% traffic envelope")
+
+    ax.set_xlabel("Cost")
+    ax.set_ylabel("Expected enabled traffic volume")
+    #ax.set_title("Pareto frontier robustness (univariate ±10%)")
+    ax.grid(alpha=0.3)
+    ax.legend()
+
+    return fig, ax
+
+
+def plot_tornado(portfolio_id, sens):
+    d = sens[sens.portfolio_id == portfolio_id]
+
+    #order = np.argsort(np.abs(d.delta_plus - d.delta_minus))
+    order = np.argsort(
+        np.maximum(np.abs(d.delta_plus), np.abs(d.delta_minus))
+    )
+
+    fig, ax = plt.subplots(figsize=(12,13))
+    ax.barh(
+        d.scenario.iloc[order],
+        d.delta_plus.iloc[order],
+        color="tab:red",
+        alpha=0.7,
+        label="+10%"
+    )
+    ax.barh(
+        d.scenario.iloc[order],
+        d.delta_minus.iloc[order],
+        color="tab:blue",
+        alpha=0.7,
+        label="−10%"
+    )
+
+    ax.axvline(0, color="black", lw=1)
+    ax.set_xlabel(
+    "Difference in Expected Enabled Traffic Volume",
+    fontsize=16
+)
+    ax.tick_params(axis='x', labelsize=14)
+    ax.tick_params(axis='y', labelsize=14)
+    ax.legend(fontsize=16)
+
+    return fig, ax
+
+
+
+
+
+
     
 if __name__ == "__main__":
     subnetworks = ["apt", "jki", "knh", "kuo", "lna", "sij", "skm", "sor", "te", "toi"]
@@ -91,7 +587,8 @@ if __name__ == "__main__":
     #directory = "model/sensitivity_analysis/parameter_wise_percentual"
     #directory = "model/sensitivity_analysis/parameter_wise_absolute"
     #directory = "model/sensitivity_analysis/simulated_percentual"
-    directory = "model/sensitivity_analysis/simulated_absolute"
+    #directory = "model/sensitivity_analysis/simulated_absolute"
+    directory = ""
 
     scenarios = ["1_south_north", "2_kuo_south", "3_apt_north", "4_south_sij", "5_north_kuo", "6_kuo_sor", 
                  "7_sij_skm", "8_north_east", "9_sij_north", "10_north_lna", "11_kuo_sij", "12_south_lna",
@@ -154,7 +651,7 @@ if __name__ == "__main__":
     # Start with uniform distribution [-10%, +10%]
     elif directory == "model/sensitivity_analysis/simulated_percentual":
         percent: float = 10/100
-        sample_size = 10_000
+        sample_size = 1_000
 
         generator = random.uniform(-percent, percent, size=(sample_size, len(original_volumes)))
 
@@ -182,19 +679,25 @@ if __name__ == "__main__":
     elif directory == "model/sensitivity_analysis/simulated_absolute":
         N: float = 100.0
 
-        sample_size = 10_000
+        sample_size = 1_000
 
         performances: dict[tuple[int, ...], list[float]] = {q: [] for q in Q_star}
 
-        generator = random.uniform(-N, N, size=(sample_size, len(original_volumes)))
+        terminal_pairs = list(original_volumes.keys())
 
-        
-    
+        generator = random.uniform(-N, N, size=(sample_size, len(terminal_pairs)))
+
         for idx in range(sample_size):
-            volume_copy = original_volumes.copy()
-            for j, (terminal_pair, volume) in enumerate(volume_copy.items()):
+            volume_copy = {}
+            for j, pair in enumerate(terminal_pairs):
+                v = original_volumes[pair]
                 variation = generator[idx, j]
-                volume_copy[terminal_pair] = max(volume + variation, 0)
+                if v < abs(variation):
+                    variation = v * variation / abs(variation)
+                    volume_copy[pair] = max(v + variation, 0)
+                else:
+                    volume_copy[pair] = max(v + generator[idx, j], 0)
+                
             
             performance = main(Q_star, combined_costs, dict_node_reinforcements, volume_copy, reliabilities, directory)
 
@@ -209,8 +712,133 @@ if __name__ == "__main__":
                                     f"{directory}/whole_network_ce_portfolios_mc.json")
     
     else: # visualization
+        monte_carlo = False
+        if monte_carlo:
+            # Load your data
+            #directory = "model/sensitivity_analysis/parameter_wise_percentual"
+            #directory = "model/sensitivity_analysis/parameter_wise_absolute"
+            #directory = "model/sensitivity_analysis/simulated_percentual"
+            directory = "model/sensitivity_analysis/simulated_absolute"
+            filename = directory + "/whole_network_ce_portfolios_mc.json"
+            with open(filename, 'r') as f:
+                data = json.load(f)
+            
+            # Prepare data
+            costs, performances = prepare_data_from_structure(data)
+            
+            # Plot with error bars
+            fig1, ax1, stats1 = plot_pareto_frontier_with_ci(
+                costs, performances,
+                confidence_level=0.95,
+                ci_style='errorbar'
+            )
+            plt.savefig("absolute_pareto_frontier_errorbars.pdf")
+            #plt.savefig("percentual_pareto_frontier_errorbars.pdf")
+            plt.show()
+            
+            # Plot with shaded region
+            fig2, ax2, stats2 = plot_pareto_frontier_with_ci(
+                costs, performances,
+                confidence_level=0.95,
+                ci_style='shaded'
+            )
+            plt.savefig("absolute_pareto_frontier_shaded.pdf")
+            #plt.savefig("percentual_pareto_frontier_errorbars.pdf")
+            plt.show()
+            
+            # Print statistics
+            print("\nPortfolio Statistics:")
+            print("Cost\tMean\t95% CI Lower\t95% CI Upper\tStd Dev")
+            for i, (cost, mean_val, ci_low, ci_up, std_val) in enumerate(
+                zip(costs, stats1['means'], stats1['ci_lowers'], 
+                    stats1['ci_uppers'], stats1['stds'])):
+                print(f"{cost}\t{mean_val:.2f}\t{ci_low:.2f}\t{ci_up:.2f}\t{std_val:.2f}")
+        else:
+            # Univariate visualization
 
-        pass
+            SCENARIO_TO_PAIR_SIMPLE: dict[str, str] = {}
+
+            for key in SCENARIO_TO_PAIR.keys():
+                first: str = format_station_name(str(key.split("_")[1]))
+                second: str = format_station_name(str(key.split("_")[2]))
+                SCENARIO_TO_PAIR_SIMPLE[key] = "(" + first + ", " + second + ")"
+
+            absolute = False
+            if absolute:
+                directory = "model/sensitivity_analysis/parameter_wise_absolute"
+                baseline = "model/results/whole_network_ce_portfolios.json"
+
+                scenario_files = {}
+                for scenario in SCENARIO_TO_PAIR.keys():
+                    scenario_files[SCENARIO_TO_PAIR_SIMPLE[scenario]] = {
+                        "lower": f"{directory}/{scenario}/whole_network_ce_portfolios_lower.json",
+                        "higher": f"{directory}/{scenario}/whole_network_ce_portfolios_higher.json"
+                    }
+
+                df = build_sensitivity_dataframe(baseline, scenario_files)
+                sens, base = compute_univariate_metrics(df)
+
+                # Pareto envelope
+                plot_pareto_envelope(base, sens)
+                plt.show()
+
+                # Knee portfolio
+                knee = base.sort_values("cost").iloc[len(base)//2].portfolio_id
+
+                # Tornado
+                plot_tornado(knee, sens)
+                plt.show()
+
+            else:
+                # Percentual
+                directory = "model/sensitivity_analysis/parameter_wise_percentual"
+                baseline = "model/results/whole_network_ce_portfolios.json"
+
+                scenario_files = {}
+                for scenario in SCENARIO_TO_PAIR.keys():
+                    scenario_files[SCENARIO_TO_PAIR_SIMPLE[scenario]] = {
+                        "lower": f"{directory}/{scenario}/whole_network_ce_portfolios_lower.json",
+                        "higher": f"{directory}/{scenario}/whole_network_ce_portfolios_higher.json"
+                    }
+
+                df = build_sensitivity_dataframe(baseline, scenario_files)
+                sens, base = compute_univariate_metrics(df)
+
+                # Pareto envelope
+                #plot_pareto_envelope(base, sens)
+                #plt.show()
+                target_costs = [0, 10, 20, 45]
+
+                selected_portfolios = {}
+    
+                for target_cost in target_costs:
+                    if target_cost in base['cost'].values:
+                        # Exact match exists
+                        portfolio = base[base['cost'] == target_cost].iloc[0]
+                    else:
+                        # Find closest portfolio
+                        cost_diffs = abs(base['cost'] - target_cost)
+                        closest_idx = cost_diffs.idxmin()
+                        portfolio = base.loc[closest_idx]
+                        print(f"Note: No portfolio with exact cost {target_cost}. "
+                            f"Using cost {portfolio['cost']} instead.")
+                    
+                    selected_portfolios[target_cost] = portfolio['portfolio_id']
+
+                # Knee portfolio
+                #knee = base.sort_values("cost").iloc[2].portfolio_id
+
+                for cost, knee in selected_portfolios.items():
+                    # Tornado
+                    plot_tornado(knee, sens)
+                    plt.savefig(f"cost_{cost}_parameter_wise_percentual_variation.pdf")
+                    plt.show()
+                
+                # Tornado
+                #knee = base.sort_values("cost").iloc[len(base) - 1].portfolio_id
+                #plot_tornado(knee, sens)
+                #plt.savefig("cost_45_parameter_wise_percentual_variation.pdf")
+                #plt.show()
 
 
 

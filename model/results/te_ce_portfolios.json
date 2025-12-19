@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-12-02T00:06:51.924488",
+    "generated_at": "2025-12-11T07:49:56.701181",
     "total_portfolios": 3,
     "number_of_actions": 2
   },
@@ -22,7 +22,7 @@
         0
       ],
       "reinforced_nodes": [],
-      "performance": 21397.295700000002,
+      "performance": 10648.8657,
       "cost": 0.0,
       "total_cost": 0.0
     },
@@ -35,7 +35,7 @@
       "reinforced_nodes": [
         "TE V0002"
       ],
-      "performance": 21505.357850000004,
+      "performance": 10702.64285,
       "cost": 1,
       "total_cost": 1
     },
@@ -49,7 +49,7 @@
         "TE V0001",
         "TE V0002"
       ],
-      "performance": 21559.376425,
+      "performance": 10756.661425000002,
       "cost": 2,
       "total_cost": 2
     }
