@@ -1,6 +1,6 @@
 # Hierarchical Portfolio Optimization of Reinforcement Actions in Transportation Networks
 
-This is a Python project related to my MSc. thesis, which can be examined [here]([https://github.com/peloe1/msc-thesis](https://sal.aalto.fi/publications/pdf-files//theses/mas/tpel26_public.pdf)).
+This is a Python project related to my MSc. thesis, which can be examined [here](https://sal.aalto.fi/publications/pdf-files//theses/mas/tpel26_public.pdf).
 
 ## Installation
 
