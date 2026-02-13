@@ -830,6 +830,10 @@ if __name__ == "__main__":
 
                 for cost, knee in selected_portfolios.items():
                     # Tornado
+                    if cost == 45:
+                        print("Portfolio: ", knee)
+                        result = combined_portfolio_to_readable(knee, dict_node_reinforcements, subnetworks)
+                        print(result)
                     plot_tornado(knee, sens)
                     plt.savefig(f"cost_{cost}_parameter_wise_percentual_variation.pdf")
                     plt.show()
@@ -839,83 +843,3 @@ if __name__ == "__main__":
                 #plot_tornado(knee, sens)
                 #plt.savefig("cost_45_parameter_wise_percentual_variation.pdf")
                 #plt.show()
-
-
-
-    
-
-
-    # Use this if you want to do the proper sensitivity analysis on the actual optimal solution / the composition of the optima (core indexes etc.)
-    """
-    compute_subnetwork_travel_volumes = True
-    if compute_subnetwork_travel_volumes:
-
-        all_terminal_nodes = {"apt": ["LNA V0001", "SIJ V0632", "APT V0002", "APT V0001"],
-                          "jki": ["KNH V0381", "LUI V0511", "JKI V0411", "JKI V0422"],
-                          "knh": ["JKI V0411", "SKM V0262", "KNH V0381"],
-                          "kuo": ["SOR V0001", "KRM V0001|V0002", "KUO V0941", "KUO V0002"],
-                          "lna": ["TE V0001", "APT V0002", "LNA V0002", "LNA V0001"],
-                          "sij": ["SKM V0271", "APT V0001", "TOI V0002", "SIJ V0642", "SIJ V0632", "SIJ V0611"],
-                          "skm": ["SIJ V0642", "KNH V0381", "SKM V0262", "SKM V0271"],
-                          "sor": ["TOI V0001", "KUO V0002", "SOR V0001"],
-                          "te": ["OHM V0002", "LNA V0002", "TE V0001", "TE V0002"],
-                          "toi": ["SIJ V0611", "SOR V0001", "TOI V0001", "TOI V0002"]}
-    
-        subnetwork_transitions = {('krm', 'kuo'): ("KRM V0001|V0002", "KUO V0941"),
-                                ('kuo', 'sor'): ("KUO V0002", "SOR V0001"),
-                                ('krm', 'sor'): ("SOR V0001", "KRM V0001|V0002"),
-                                ('sor', 'toi'): ("TOI V0001", "SOR V0001"),
-                                ('kuo', 'toi'): ("TOI V0001", "KUO V0002"),
-                                ('toi', 'sij'): ("SIJ V0611", "TOI V0002"),
-                                ('sor', 'sij'): ("SIJ V0611", "SOR V0001"),
-                                ('toi', 'apt'): ("TOI V0002", "APT V0001"),
-                                ('toi', 'skm'): ("TOI V0002", "SKM V0271"),
-                                ('sij', 'apt'): ("APT V0001", "SIJ V0632"),
-                                ('sij', 'skm'): ("SIJ V0642", "SKM V0271"),
-                                ('sij', 'lna'): ("LNA V0001", "SIJ V0632"),
-                                ('apt', 'lna'): ("APT V0002", "LNA V0001"),
-                                ('apt', 'te'): ("APT V0002", "TE V0001"),
-                                ('lna', 'te'): ("LNA V0002", "TE V0001"),
-                                ('lna', 'ohm'): ("LNA V0002", "OHM V0002"),
-                                ('te', 'ohm'): ("OHM V0002", "TE V0002"),
-                                ('sij', 'knh'): ("KNH V0381", "SIJ V0642"),
-                                ('skm', 'knh'): ("KNH V0381", "SKM V0262"),
-                                ('skm', 'jki'): ("JKI V0411", "SKM V0262"),
-                                ('knh', 'jki'): ("KNH V0381", "JKI V0411"),
-                                ('knh', 'lui'): ("KNH V0381", "LUI V0511"),
-                                ('jki', 'lui'): ("JKI V0422", "LUI V0511"),
-                                ('skm', 'apt'): ("SKM V0271", "APT V0001")
-        }
-
-        dict_transitions: dict[tuple[str, str], tuple[str, str]] = {}
-
-        for (sub1, sub2), (n1, n2) in subnetwork_transitions.items():
-            sorted_sub = sorted([sub1, sub2])
-            sorted_pair = sorted([n1, n2])
-            sub_pair = (sorted_sub[0], sorted_sub[1])
-            node_pair = (sorted_pair[0], sorted_pair[1])
-            dict_transitions[sub_pair] = node_pair
-        
-        filename = "data/network/dipan_data/@network.json"
-        G, G_original = construct_graph(filename)
-
-        node_list = sorted(G.nodes())
-        node_to_subnetwork: dict[str, str] = {}
-        for node in node_list:
-            if node[:2].lower() == 'te':
-                node_to_subnetwork[node] = node[:2].lower()
-            elif node[:3].lower() in subnetworks:
-                node_to_subnetwork[node] = node[:3].lower()
-            elif node[:3].lower() == 'ohm' or node[:3].lower() == 'lui' or node[:3].lower() == 'krm':
-                node_to_subnetwork[node] = node[:3].lower()
-
-        path_list = read_feasible_paths("model/parameters/feasible_paths.json")
-        partitioned_paths = intermediate_terminal_pairs(path_list, node_to_subnetwork, dict_transitions)
-
-        for scenario_name in scenarios:
-            travel_volume_path = f"{directory}/{scenario_name}/parameters/2024_volumes.json"
-            travel_volume_dict = read_travel_volumes(travel_volume_path)
-        
-            subnetwork_travel_volumes(subnetworks, travel_volume_dict, partitioned_paths, f"{directory}/{scenario_name}/parameters/subnetwork_volumes")
-
-    """

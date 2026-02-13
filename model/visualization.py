@@ -118,6 +118,15 @@ for (source, target), volume in zip(df["Terminal pair"], df["Yearly traffic volu
     j = terminal_to_idx[target]
     matrix[i, j] = volume
 
+for i in range(len(terminals)):
+    for j in range(len(terminals)):
+        #if i < j:  # Above diagonal
+        if matrix[i, j] > 0:
+            # Mirror it to below diagonal
+            matrix[j, i] = matrix[i, j]
+
+print(matrix)
+
 # Calculate total traffic for each terminal (incoming + outgoing)
 terminal_traffic = {}
 for terminal in terminals:
@@ -143,6 +152,8 @@ sorted_matrix = matrix[sorted_indices][:, sorted_indices]
 sorted_heatmap_df = pd.DataFrame(sorted_matrix, 
                                 index=sorted_terminals_asc, 
                                 columns=sorted_terminals_asc)
+
+print(sorted_heatmap_df)
 
 # REVERSE THE X-AXIS ORDERING
 # Keep y-axis (rows) as ascending, but reverse x-axis (columns)
@@ -193,7 +204,7 @@ mask_simple = np.triu(np.ones((n, n), dtype=bool))
 # Create the heatmap with reversed x-axis
 ax = sns.heatmap(
     reversed_df,
-    mask=mask_simple,  # Use simple mask for visual lower triangle
+    mask=mask_matrix, #mask_simple,  # Use simple mask for visual lower triangle
     annot=True,
     fmt='g',
     cmap='YlOrRd',
@@ -204,18 +215,18 @@ ax = sns.heatmap(
         'label': 'Yearly Traffic Volume (log scale)',
         'extend': 'max'
     },
-    annot_kws={'size': 7, 'weight': 'bold'},
+    annot_kws={'size': 20, 'weight': 'bold'},
     square=True
 )
 
 cbar = ax.collections[0].colorbar
-cbar.set_label('Yearly Traffic Volume (log scale)', size=14)
+cbar.set_label('Yearly Traffic Volume (log scale)', size=24)
+cbar.ax.tick_params(labelsize=20)
 
 # Customize the plot
-plt.title('Traffic Volumes', 
-          fontsize=20, fontweight='bold', pad=20)
-plt.xlabel('Terminal Node', fontsize=18)
-plt.ylabel('Terminal Node', fontsize=18)
+#plt.title('Traffic Volumes', fontsize=20, fontweight='bold', pad=20)
+#plt.xlabel('Terminal Node', fontsize=28)
+#plt.ylabel('Terminal Node', fontsize=28)
 #plt.xticks(rotation=90, fontsize=9)
 #plt.yticks(rotation=0, fontsize=9)
 
@@ -223,29 +234,30 @@ plt.ylabel('Terminal Node', fontsize=18)
 for i, terminal in enumerate(sorted_terminals_asc):  # y-axis in ascending order
     traffic = terminal_traffic[terminal]
     ax.get_yticklabels()[i].set_text(f"{terminal}\n({traffic:,.0f})")
-    ax.get_yticklabels()[i].set_fontsize(12)
+    ax.get_yticklabels()[i].set_fontsize(20)
 
 for i, terminal in enumerate(reversed_columns):  # x-axis in reversed (descending) order
     traffic = terminal_traffic[terminal]
     ax.get_xticklabels()[i].set_text(f"{terminal}\n({traffic:,.0f})")
-    ax.get_xticklabels()[i].set_fontsize(12)
+    ax.get_xticklabels()[i].set_fontsize(20)
 
 
-plt.xticks(rotation=90, fontsize=12)  # Changed from 9 to 11
-plt.yticks(rotation=0, fontsize=12)   # Changed from 9 to 11
+plt.xticks(rotation=0, fontsize=20)  # Changed from 9 to 11
+plt.yticks(rotation=0, fontsize=20)   # Changed from 9 to 11
 
 # Redraw the plot with updated labels
 plt.draw()
 
 # Add diagonal line for reference (now this will be from top-left to bottom-right)
-ax.plot([0, n], [0, n], color='blue', linewidth=1, linestyle='--', alpha=0.7)
+#ax.plot([0, n], [0, n], color='blue', linewidth=1, linestyle='--', alpha=0.7)
+ax.plot([0, n], [n, 0], color='blue', linewidth=1, linestyle='--', alpha=0.7)
 
 plt.tight_layout(rect=[0, 0.05, 1, 0.97])
 
 # Save the figure
-plt.savefig('terminal_traffic_reversed_xaxis_heatmap.pdf', 
+plt.savefig('traffic_volume_heatmap.pdf', 
             dpi=300, bbox_inches='tight')
-plt.savefig('terminal_traffic_reversed_xaxis_heatmap.png', 
+plt.savefig('traffic_volume_heatmap.png', 
             dpi=300, bbox_inches='tight')
 
 plt.show()

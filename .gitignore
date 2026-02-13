@@ -23,3 +23,7 @@ dmypy.json
 .DS_Store
 
 model/random_results/combined_portfolios.json
+
+model/random_results/combined_portfolios_epsilon_100.json
+
+model/random_results/combined_portfolios_epsilon_1000.json
